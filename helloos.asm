@@ -40,6 +40,8 @@
 ; Messages
 	DB		0x0a,0x0a
 	DB		"Hello, world!"
+	DB		0x0a,0x0a
+	DB		"I like Milky Holmes."
 	DB		0x0a
 	DB		0
 	RESB	0x1fe-($-$$)
