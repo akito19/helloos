@@ -1,7 +1,7 @@
 ;hello-os
 ;TAB = 4
 
-	ORG		0x7c00	; ブートセクタが読み込まれるアドレスの１つ
+	ORG		0x7c00    ; ブートセクタが読み込まれるアドレスの１つ
 
 ; Description for FAT12 format floppy
 	JMP		entry
@@ -27,8 +27,8 @@
 
 ; Main program
 entry:
-	MOV		AX,0			; MOV means substitution.
-	MOV		SS,AX			; AX, SS, SP, DS, ES are registers.
+	MOV		AX,0       ; MOV means substitution.
+	MOV		SS,AX      ; AX, SS, SP, DS, ES are registers.
 	MOV		SP,0x7c00
 	MOV		DS,AX
 	MOV		ES,AX
@@ -36,18 +36,18 @@ entry:
 	MOV		SI,msg
 
 putloop:
-	MOV		AL,[SI]		; MOV AL, BYTE[SI] ともかけるが，AL が4 bitであり，bit数を揃えなければならないので，BYTE は省略.
+	MOV		AL,[SI]    ; MOV AL, BYTE[SI] ともかけるが，AL が4 bitであり，bit数を揃えなければならないので，BYTE は省略.
 	ADD		SI,1
 	CMP		AL,0
-	JE		fin				; => if (AL == 0) { goto fin }
-	MOV		AH,0x0e		; AH = 0x0e
-	MOV		BX,15			; BH = 0; BL = color code
-	INT		0x10			; Call the function where is in `0x10` for operate video card from BIOS.
+	JE		fin        ; => if (AL == 0) { goto fin }
+	MOV		AH,0x0e    ; AH = 0x0e
+	MOV		BX,15      ; BH = 0; BL = color code
+	INT		0x10       ; Call the function where is in `0x10` for operate video card from BIOS.
 	JMP		putloop
 
 fin:
-	HLT							; CPUを待機状態に
-	JMP		fin				; Infinit loop
+	HLT
+	JMP		fin        ; Infinit loop
 
 msg:
 	DB		0x0a,0x0a
