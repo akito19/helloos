@@ -1,14 +1,6 @@
 ;hello-os
 ;TAB = 4
 
-; Terms
-;   IPL: Initial Program Loader...ブートセクタ．OS本体を読み込むプログラムを組み込む．
-; Operations
-;   DB: data byte...ファイルの内容を1バイトだけ直接書く
-;   DW: data word...1 word(16bit)
-;   DD: data double-word...2 words(32bit)
-;   RESB: reserve byte
-
 ; Description for FAT12 format floppy
 	DB		0xeb,0x4e,0x90
 	DB		"HELLOIPL"
