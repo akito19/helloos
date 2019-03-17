@@ -26,6 +26,7 @@ struct BOOTINFO *binfo;
 
 ...
 
+// ポインタを利用するので，メモリ番地をセット
 binfo = (struct BOOTINFO *) 0x0ff0;
 
 ...
@@ -33,4 +34,17 @@ binfo = (struct BOOTINFO *) 0x0ff0;
 xsize = (*binfo).scrnx;
 ```
 
+また，構造体へのアクセス方法は
+
+```c
+xsize = (*binfo).scrnx;
+```
+
+のような書き方の他に
+
+```c
+xsize = binfo->scrnx;
+```
+
+のようにも書ける．
 
