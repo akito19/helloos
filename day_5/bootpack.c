@@ -7,7 +7,10 @@ extern void io_store_eflags(int eflags);
 
 /* Call functions from internal files. */
 void init_palette(void);
+void init_screen(char *vram, int x, int y);
 void set_palette(int start, int end, unsigned char *rgb);
+void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
+void put_font8(char *vram, int xsize, int x, int y, char color, char *font);
 
 #define COL8_000000     0
 #define COL8_FF0000     1
@@ -34,12 +37,15 @@ struct BOOTINFO {
 
 void HariMain(void)
 {
-    char *vram; /* `BYTE [...]` 用メモリ番地 */
-    int xsize, ysize;
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0x0ff0;
+    static char font_A[16] = {
+        0x00, 0x18, 0x18, 0x18, 0x18, 0x24, 0x24, 0x24,
+        0x24, 0x7e, 0x42, 0x42, 0x42, 0xe7, 0x00, 0x00
+    };
 
     init_palette();
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
+    put_font8(binfo->vram, binfo->scrnx, 10, 10, COL8_FFFFFF, font_A);
 
     for(;;) {
         io_hlt;
@@ -119,5 +125,24 @@ void set_palette(int start, int end, unsigned char *rgb)
         rgb += 3;
     }
     io_store_eflags(eflags); /* 割り込み許可フラグを元に戻す */
+    return;
+}
+
+void put_font8(char *vram, int xsize, int x, int y, char color, char *font)
+{
+    int i;
+    char *p, d; // data
+    for (i = 0; i < 16; i++) {
+        p = vram + (y + i) * xsize + x;
+        d = font[i];
+        if ((d & 0x80) != 0) { p[0] = color; }
+        if ((d & 0x40) != 0) { p[1] = color; }
+        if ((d & 0x20) != 0) { p[2] = color; }
+        if ((d & 0x10) != 0) { p[3] = color; }
+        if ((d & 0x08) != 0) { p[4] = color; }
+        if ((d & 0x04) != 0) { p[5] = color; }
+        if ((d & 0x02) != 0) { p[6] = color; }
+        if ((d & 0x01) != 0) { p[7] = color; }
+    }
     return;
 }
