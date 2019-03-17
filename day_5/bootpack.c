@@ -1,19 +1,5 @@
-/* Call functions from external files. */
-extern void io_hlt(void);
-extern void io_cli(void);
-extern void io_out8(int port, int data);
-extern int io_load_eflags(void);
-extern void io_store_eflags(int eflags);
-
-/* Call functions from internal files. */
-void init_palette(void);
-void init_screen(char *vram, int x, int y);
-void init_mouse(char *mouse, char bc);
-void set_palette(int start, int end, unsigned char *rgb);
-void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
-void putfonts8(char *vram, int xsize, int x, int y, char color, char *font);
-void putfonts8_asc(char *vram, int xsize, int x, int y, char color, unsigned char *s);
-void putblock8_8(char *vram, int vxsize, int pxsize, int pysize, int px0, int py0, char *buf, int bxsize);
+// コンパイル時に -nostdlib を付与しているので，読み込めない．
+// #include <stdio.h>
 
 #define COL8_000000     0
 #define COL8_FF0000     1
@@ -32,11 +18,48 @@ void putblock8_8(char *vram, int vxsize, int pxsize, int pysize, int px0, int py
 #define COL8_008484     14
 #define COL8_848484     15
 
+/* Call functions from external files. */
+extern void io_hlt(void);
+extern void io_cli(void);
+extern void io_out8(int port, int data);
+extern int io_load_eflags(void);
+extern void io_store_eflags(int eflags);
+extern void load_gdtr(int limit, int addr);
+extern void load_idtr(int limit, int addr);
+
+/* Call functions from internal files. */
+void init_palette(void);
+void init_screen(char *vram, int x, int y);
+void init_mouse_cursor(char *mouse, char bc);
+void init_gdtidt(void);
+
+void set_palette(int start, int end, unsigned char *rgb);
+
+void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
+void putfonts8(char *vram, int xsize, int x, int y, char color, char *font);
+void putfonts8_asc(char *vram, int xsize, int x, int y, char color, unsigned char *s);
+void putblock8_8(char *vram, int vxsize, int pxsize, int pysize, int px0, int py0, char *buf, int bxsize);
+
 struct BOOTINFO {
     char cyls, leds, vmode, reserve;
     short scrnx, scrny;
     char *vram;
 };
+
+struct SEGMENT_DESCRIPTOR {
+    short limit_low, base_low;
+    char base_mid, access_right;
+    char limit_high, base_high;
+};
+
+struct GATE_DESCRIPTOR {
+    short offset_low, selector;
+    char dw_count, access_right;
+    short offset_high;
+};
+
+void set_segmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, int ar);
+void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 
 void HariMain(void)
 {
@@ -44,6 +67,7 @@ void HariMain(void)
     char s[40], mcursor[256];
     int mx, my;
 
+    init_gdtidt();
     init_palette();
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
 
@@ -51,6 +75,7 @@ void HariMain(void)
     my = (binfo->scrny - 28 - 16) / 2;
     init_mouse_cursor(mcursor, COL8_008484);
     putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
+    // sprintf(s, "(%d, %d)", mx, my);
     putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
 
     for(;;) {
@@ -156,6 +181,28 @@ void init_mouse_cursor(char *mouse, char bc)
     return;
 }
 
+void init_gdtidt(void)
+{
+    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) 0x00270000;
+    struct GATE_DESCRIPTOR    *idt = (struct GATE_DESCRIPTOR *) 0x0026f800;
+    int i;
+
+    // GDT 初期化
+    for (i = 0; i < 8192; i++) {
+        // `gdt` はポインタなので，i の値が 1 増えるごとに，8byte の構造体へのアクセスなので，メモリ番地が 8 増えているよ．
+        set_segmdesc(gdt + i, 0, 0, 0);
+    }
+    set_segmdesc(gdt + 1, 0xffffffff, 0x00000000, 0x4092);
+    set_segmdesc(gdt + 2, 0x0007ffff, 0x00280000, 0x409a);
+    load_gdtr(0xffff, 0x00270000);
+
+    // IDT 初期化
+    for (i = 0; i < 256; i++) {
+        set_gatedesc(idt + i, 0, 0, 0);
+    }
+    load_idtr(0x7ff, 0x0026f800);
+}
+
 void set_palette(int start, int end, unsigned char *rgb)
 {
     int i, eflags;
@@ -169,6 +216,31 @@ void set_palette(int start, int end, unsigned char *rgb)
         rgb += 3;
     }
     io_store_eflags(eflags); /* 割り込み許可フラグを元に戻す */
+    return;
+}
+
+void set_segmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, int ar)
+{
+    if (limit > 0xfffff) {
+        ar |= 0x8000; // G_bit = 1
+        limit /= 0x1000;
+    }
+    sd->limit_low    = limit & 0xffff;
+    sd->base_low     = base & 0xffff;
+    sd->base_mid     = (base >> 16) & 0xff;
+    sd->access_right = ar & 0xff;
+    sd->limit_high   = ((limit >> 16) & 0x0f) | ((ar >> 8) & 0xf0);
+    sd->base_high    = (base >> 24) & 0xff;
+    return;
+}
+
+void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar)
+{
+    gd->offset_low   = offset & 0xffff;
+    gd->selector     = selector;
+    gd->dw_count     = (ar >> 8) & 0xff;
+    gd->access_right = ar & 0xff;
+    gd->offset_high  = (offset >> 16) & 0xffff;
     return;
 }
 
