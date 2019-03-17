@@ -14,13 +14,19 @@ nasmfunc.o: nasmfunc.asm Makefile
 	# -f : select an output format
 	nasm -g -f elf -o nasmfunc.o nasmfunc.asm
 
-bootpack.hrb: bootpack.c har.lds nasmfunc.o Makefile
+hankaku.o: convert_hankaku.c Makefile
+	gcc -m32 -o hankaku.o convert_hankaku.c
+
+hankaku.c: hankaku.o hankaku.txt Makefile
+	./hankaku.o
+
+bootpack.hrb: bootpack.c har.lds nasmfunc.o hankaku.c Makefile
 	# http://softwaretechnique.jp/OS_Development/startup_kernel.html
 	#
 	# `-fno-pic` option it set for a workaround because GCC raised error for following reason:
 	# `bootpack.c:(.text+0x9): undefined reference to `_GLOBAL_OFFSET_TABLE_`
 	# PIC: Programmable Interrupt Controller, 割り込みコントローラ．
-	gcc -march=i486 -m32 -nostdlib -T har.lds -g bootpack.c nasmfunc.o -o bootpack.hrb -fno-pic
+	gcc -march=i486 -m32 -nostdlib -T har.lds -g bootpack.c hankaku.c nasmfunc.o -o bootpack.hrb -fno-pic
 
 $(OSNAME).sys: asmhead.bin bootpack.hrb Makefile
 	cat asmhead.bin bootpack.hrb > $(OSNAME).sys
@@ -47,4 +53,4 @@ clean:
 	rm *.lst *.bin *.sys *.img *.hrb *.o
 
 src_only:
-	ls | grep -vE '*.c|*.asm|*.lds|Makefile|README.md' | xargs rm
+	ls | grep -vE '*.txt|*.c|*.asm|*.lds|Makefile|README.md' | xargs rm
