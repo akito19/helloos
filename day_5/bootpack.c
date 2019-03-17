@@ -10,7 +10,8 @@ void init_palette(void);
 void init_screen(char *vram, int x, int y);
 void set_palette(int start, int end, unsigned char *rgb);
 void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
-void put_font8(char *vram, int xsize, int x, int y, char color, char *font);
+void putfont8(char *vram, int xsize, int x, int y, char color, char *font);
+void putfont8_asc(char *vram, int xsize, int x, int y, char color, unsigned char *s);
 
 #define COL8_000000     0
 #define COL8_FF0000     1
@@ -42,12 +43,9 @@ void HariMain(void)
 
     init_palette();
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
-    put_font8(binfo->vram, binfo->scrnx,  8, 8, COL8_FFFFFF, hankaku + 'A' * 16);
-    put_font8(binfo->vram, binfo->scrnx, 16, 8, COL8_FFFFFF, hankaku + 'B' * 16);
-    put_font8(binfo->vram, binfo->scrnx, 24, 8, COL8_FFFFFF, hankaku + 'C' * 16);
-    put_font8(binfo->vram, binfo->scrnx, 40, 8, COL8_FFFFFF, hankaku + '1' * 16);
-    put_font8(binfo->vram, binfo->scrnx, 48, 8, COL8_FFFFFF, hankaku + '2' * 16);
-    put_font8(binfo->vram, binfo->scrnx, 56, 8, COL8_FFFFFF, hankaku + '3' * 16);
+    putfont8_asc(binfo->vram, binfo->scrnx,   8,  8, COL8_FFFFFF, "ABC 123");
+    putfont8_asc(binfo->vram, binfo->scrnx,  31, 31, COL8_000000, "Haribote OS.");
+    putfont8_asc(binfo->vram, binfo->scrnx,  30, 30, COL8_FFFFFF, "Haribote OS.");
 
     for(;;) {
         io_hlt;
@@ -130,7 +128,7 @@ void set_palette(int start, int end, unsigned char *rgb)
     return;
 }
 
-void put_font8(char *vram, int xsize, int x, int y, char color, char *font)
+void putfont8(char *vram, int xsize, int x, int y, char color, char *font)
 {
     int i;
     char *p, d; // data
@@ -145,6 +143,16 @@ void put_font8(char *vram, int xsize, int x, int y, char color, char *font)
         if ((d & 0x04) != 0) { p[5] = color; }
         if ((d & 0x02) != 0) { p[6] = color; }
         if ((d & 0x01) != 0) { p[7] = color; }
+    }
+    return;
+}
+
+void putfont8_asc(char *vram, int xsize, int x, int y, char color, unsigned char *s)
+{
+    extern char hankaku[4096];
+    for (; *s != 0x00; s++) {
+        putfont8(vram, xsize, x, y, color, hankaku + *s * 16);
+        x += 8;
     }
     return;
 }
