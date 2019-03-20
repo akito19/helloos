@@ -26,6 +26,7 @@ extern int io_load_eflags(void);
 extern void io_store_eflags(int eflags);
 extern void load_gdtr(int limit, int addr);
 extern void load_idtr(int limit, int addr);
+extern void re_sprintf(char *str, char *fmt, ...);
 
 /* Call functions from internal files. */
 void init_palette(void);
@@ -73,9 +74,10 @@ void HariMain(void)
 
     mx = (binfo->scrnx - 16) / 2;
     my = (binfo->scrny - 28 - 16) / 2;
+
     init_mouse_cursor(mcursor, COL8_008484);
     putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
-    // sprintf(s, "(%d, %d)", mx, my);
+    re_sprintf(s, "(%d, %d)", mx, my);
     putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
 
     for(;;) {
