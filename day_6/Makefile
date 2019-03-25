@@ -56,4 +56,4 @@ clean:
 	rm *.lst *.bin *.sys *.img *.hrb *.o
 
 src_only:
-	ls | grep -vE '*.txt|*.c|*.asm|*.lds|Makefile|*.md' | xargs rm
+	ls | grep -vE '*.txt|*.c|*.h|*.asm|*.lds|Makefile|*.md' | xargs rm

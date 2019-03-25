@@ -9,6 +9,9 @@ void HariMain(void)
     int mx, my;
 
     init_gdtidt();
+    init_pic();
+    io_sti(); // Set Interrupt Flag, 有効時，外部装置からの割り込みを受け付けるようになる．
+
     init_palette();
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
 
@@ -19,6 +22,9 @@ void HariMain(void)
     putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
     re_sprintf(s, "(%d, %d)", mx, my);
     putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
+
+    io_out8(PIC0_IMR, 0xf9);
+    io_out8(PIC1_IMR, 0xef);
 
     for(;;) {
         io_hlt;

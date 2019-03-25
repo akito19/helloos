@@ -36,3 +36,24 @@ PICのレジスタはすべて8bit registerでありmaster-slave構成を取っ�
   * 1-4のICWがあり合計4 byte．
   * ICW3 はマスタースレーブ接続に関する設定で，マスタに対してはどのIRQにスレーブが繋がっているのかを8 bitでせてい．
   * ICW2 はIRQをどの割り込み番号としてCPUに通知するかを設定するもので，OSをごとに設定する意味がある唯一のICW
+
+### 割り込み処理
+
+Ref: `nasmfunc.asm`
+
+割り込み処理を実装するときにレジスタの値を愚直にPUSHして，処理を呼び出し，それが終わると今度はレジスタを元に戻して IRETD するのは，復帰後に処理を継続するため．もし割り込み復帰時にレジスタの値が狂っていたら，そこから処理が続行できなくなる．
+
+また，`PUSHAD` は
+
+```
+PUSH EAX
+PUSH ECX
+PUSH EDX
+PUSH EBX
+PUSH ESP
+PUSH EBP
+PUSH ESI
+PUSH EDI
+```
+
+の8命令に相当し，`POPAD` はその逆順にPOPする命令．
