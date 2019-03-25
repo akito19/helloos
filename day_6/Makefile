@@ -1,4 +1,6 @@
-OSNAME := haribote
+OSNAME = haribote
+GCC = gcc
+CFLAGS = -march=i486 -g -m32 -nostdlib
 
 default:
 	make img
@@ -15,24 +17,19 @@ nasmfunc.o: nasmfunc.asm Makefile
 	nasm -g -f elf -o nasmfunc.o nasmfunc.asm
 
 hankaku.o: convert_hankaku.c Makefile
-	gcc -m32 -o hankaku.o convert_hankaku.c
+	$(GCC) -m32 -o hankaku.o convert_hankaku.c
 
 hankaku.c: hankaku.o hankaku.txt Makefile
 	./hankaku.o
 
-graphic.o: graphic.c Makefile
-	gcc -m32 -o graphic.o graphic.c
-
-dsctbl.o: dsctbl.c Makefile
-	gcc -m32 -o dsctbl.o dsctbl.c
-
-bootpack.hrb: bootpack.c har.lds nasmfunc.o hankaku.c mysprintf.c graphic.c dsctbl.c Makefile
+FILES = bootpack.c hankaku.c graphic.c dsctbl.c mysprintf.c nasmfunc.o
+bootpack.hrb: bootpack.c hankaku.c graphic.c dsctbl.c mysprintf.c har.lds nasmfunc.o Makefile
 	# http://softwaretechnique.jp/OS_Development/startup_kernel.html
 	#
 	# `-fno-pic` option it set for a workaround because GCC raised error for following reason:
 	# `bootpack.c:(.text+0x9): undefined reference to `_GLOBAL_OFFSET_TABLE_`
 	# PIC: Programmable Interrupt Controller, 割り込みコントローラ．
-	gcc -march=i486 -g -m32 -nostdlib -T har.lds bootpack.c hankaku.c nasmfunc.o graphic.c dsctbl.c mysprintf.c -o bootpack.hrb -fno-pic
+	$(GCC) $(CFLAGS) -T har.lds $(FILES) -o bootpack.hrb -fno-pic
 
 $(OSNAME).sys: asmhead.bin bootpack.hrb Makefile
 	cat asmhead.bin bootpack.hrb > $(OSNAME).sys
