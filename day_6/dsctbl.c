@@ -26,7 +26,7 @@ void init_gdtidt(void)
 void set_segmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, int ar)
 {
     if (limit > 0xfffff) {
-        ar |= 0x8000; // G_bit = 1
+        ar |= 0x8000; // G_bit = 1, このフラグが 1 のとき，リミットをバイト単位でなくページ単位(4KB)で解釈する．
         limit /= 0x1000;
     }
     sd->limit_low    = limit & 0xffff;

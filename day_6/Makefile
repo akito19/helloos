@@ -22,8 +22,8 @@ hankaku.o: convert_hankaku.c Makefile
 hankaku.c: hankaku.o hankaku.txt Makefile
 	./hankaku.o
 
-FILES = bootpack.c hankaku.c graphic.c dsctbl.c mysprintf.c nasmfunc.o
-bootpack.hrb: bootpack.c hankaku.c graphic.c dsctbl.c mysprintf.c har.lds nasmfunc.o Makefile
+FILES = bootpack.c hankaku.c graphic.c dsctbl.c mysprintf.c int.c nasmfunc.o
+bootpack.hrb: $(FILES) har.lds Makefile
 	# http://softwaretechnique.jp/OS_Development/startup_kernel.html
 	#
 	# `-fno-pic` option it set for a workaround because GCC raised error for following reason:
