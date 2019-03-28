@@ -29,12 +29,16 @@ void init_pic(void)
 // PS/2キーボードからの割り込み
 void inthandler21(int *esp)
 {
-    unsigned char data, s[4];
+    unsigned char data;
     io_out8(PIC0_OCW2, 0x61);  // IRQ-01受付完了PICに通知
     data = io_in8(PORT_KEYDAT);
-    if (keybuf.next < 32) {
-        keybuf.data[keybuf.next] = data;
-        keybuf.next++;
+    if (keybuf.len < 32) {
+        keybuf.data[keybuf.next_w] = data;
+        keybuf.len++;
+        keybuf.next_w++;
+        if (keybuf.next_w == 32) {
+            keybuf.next_w = 0;
+        }
     }
     return;
 }
