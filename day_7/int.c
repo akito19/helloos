@@ -2,7 +2,7 @@
 
 #define PORT_KEYDAT 0x0060
 
-extern struct KEYBUF keybuf;
+struct FIFO8 keyfifo;
 
 // Initialize pic
 void init_pic(void)
@@ -32,14 +32,7 @@ void inthandler21(int *esp)
     unsigned char data;
     io_out8(PIC0_OCW2, 0x61);  // IRQ-01受付完了PICに通知
     data = io_in8(PORT_KEYDAT);
-    if (keybuf.len < 32) {
-        keybuf.data[keybuf.next_w] = data;
-        keybuf.len++;
-        keybuf.next_w++;
-        if (keybuf.next_w == 32) {
-            keybuf.next_w = 0;
-        }
-    }
+    fifo8_put(&keyfifo, data); // `&` はstruct, variableのメモリ番地を教えてもらう
     return;
 }
 

@@ -2,13 +2,13 @@
 // #include <stdio.h>
 #include "bootpack.h"
 
-struct KEYBUF keybuf;
+struct FIFO8 keyfifo;
 
 void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0x0ff0;
-    char i, j, s[40], mcursor[256];
-    int mx, my;
+    char s[40], mcursor[256], keybuf[32];
+    int i, mx, my;
 
     init_gdtidt();
     init_pic();
@@ -16,6 +16,7 @@ void HariMain(void)
 
     init_palette();
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
+    fifo8_init(&keyfifo, 32, keybuf);
 
     mx = (binfo->scrnx - 16) / 2;
     my = (binfo->scrny - 28 - 16) / 2;
@@ -30,15 +31,10 @@ void HariMain(void)
 
     for(;;) {
         io_cli();
-        if (keybuf.len == 0) {
+        if (fifo8_status(&keyfifo) == 0) {
             io_stihlt();
         } else {
-            i = keybuf.data[keybuf.next_r];
-            keybuf.len--;
-            keybuf.next_r++;
-            if (keybuf.next_r == 32) {
-                keybuf.next_r = 0;
-            }
+            i = fifo8_get(&keyfifo);
             io_sti();
             re_sprintf(s, "%x", i);
             boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);

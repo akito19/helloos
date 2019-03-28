@@ -22,7 +22,7 @@ hankaku.o: convert_hankaku.c Makefile
 hankaku.c: hankaku.o hankaku.txt Makefile
 	./hankaku.o
 
-FILES = bootpack.c hankaku.c graphic.c dsctbl.c mysprintf.c int.c nasmfunc.o
+FILES = bootpack.c hankaku.c graphic.c dsctbl.c mysprintf.c int.c fifo.c nasmfunc.o
 bootpack.hrb: $(FILES) har.lds Makefile
 	# http://softwaretechnique.jp/OS_Development/startup_kernel.html
 	#

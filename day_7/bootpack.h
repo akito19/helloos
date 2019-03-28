@@ -28,6 +28,16 @@ void asm_inthandler2c(void);
 // original
 void re_sprintf(char *str, char *fmt, ...);
 
+// fifo.c
+struct FIFO8 {
+    unsigned char *buf;
+    int w, r, size, free, flags;
+};
+void fifo8_init(struct FIFO8 *fifo, int size, unsigned char *buf);
+int fifo8_put(struct FIFO8 *fifo, unsigned char data);
+int fifo8_get(struct FIFO8 *fifo);
+int fifo8_status(struct FIFO8 *fifo);
+
 // graphic.c
 void init_palette(void);
 void init_screen(char *vram, int x, int y);
@@ -79,10 +89,6 @@ void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 #define AR_INTGATE32    0x008e
 
 // int.c
-struct KEYBUF {
-    unsigned char data[32];
-    int next_r, next_w, len;
-};
 void init_pic(void);
 void inthandler21(int *esp);
 void inthandler27(int *esp);
