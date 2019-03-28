@@ -2,6 +2,8 @@
 
 #define PORT_KEYDAT 0x0060
 
+extern struct KEYBUF keybuf;
+
 // Initialize pic
 void init_pic(void)
 {
@@ -27,14 +29,13 @@ void init_pic(void)
 // PS/2キーボードからの割り込み
 void inthandler21(int *esp)
 {
-    struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
     unsigned char data, s[4];
     io_out8(PIC0_OCW2, 0x61);  // IRQ-01受付完了PICに通知
     data = io_in8(PORT_KEYDAT);
-
-    re_sprintf(s, "%x", data);
-    boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
-    putfonts8_asc(binfo->vram, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
+    if (keybuf.flag == 0) {
+        keybuf.data = data;
+        keybuf.flag = 1;
+    }
     return;
 }
 

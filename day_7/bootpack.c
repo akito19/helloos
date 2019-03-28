@@ -2,10 +2,12 @@
 // #include <stdio.h>
 #include "bootpack.h"
 
+struct KEYBUF keybuf;
+
 void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0x0ff0;
-    char s[40], mcursor[256];
+    char i, s[40], mcursor[256];
     int mx, my;
 
     init_gdtidt();
@@ -27,6 +29,16 @@ void HariMain(void)
     io_out8(PIC1_IMR, 0xef);
 
     for(;;) {
-        io_hlt;
+        io_cli();
+        if (keybuf.flag == 0) {
+            io_stihlt();
+        } else {
+            i = keybuf.data;
+            keybuf.flag = 0;
+            io_sti();
+            re_sprintf(s, "%x", i);
+            boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
+            putfonts8_asc(binfo->vram, binfo->scrnx, 0, 16,  COL8_FFFFFF, s);
+        }
     }
 }
