@@ -7,7 +7,7 @@ struct KEYBUF keybuf;
 void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0x0ff0;
-    char i, s[40], mcursor[256];
+    char i, j, s[40], mcursor[256];
     int mx, my;
 
     init_gdtidt();
@@ -30,11 +30,14 @@ void HariMain(void)
 
     for(;;) {
         io_cli();
-        if (keybuf.flag == 0) {
+        if (keybuf.next == 0) {
             io_stihlt();
         } else {
-            i = keybuf.data;
-            keybuf.flag = 0;
+            i = keybuf.data[0];
+            keybuf.next--;
+            for(j=0; j < keybuf.next; j++) {
+                keybuf.data[j] = keybuf.data[j + 1];
+            }
             io_sti();
             re_sprintf(s, "%x", i);
             boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
