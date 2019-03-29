@@ -1,19 +1,21 @@
 #include "bootpack.h"
 
 struct FIFO8 keyfifo;
+struct FIFO8 mousefifo;
 void init_keyboard(void);
 void enable_mouse(void);
 
 void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0x0ff0;
-    char s[40], mcursor[256], keybuf[32];
+    char s[40], mcursor[256], keybuf[32], mousebuf[128];
     int i, mx, my;
 
     init_gdtidt();
     init_pic();
     io_sti(); // Set Interrupt Flag, 有効時，外部装置からの割り込みを受け付けるようになる．
     fifo8_init(&keyfifo, 32, keybuf);
+    fifo8_init(&mousefifo, 128, mousebuf);
     io_out8(PIC0_IMR, 0xf9);
     io_out8(PIC1_IMR, 0xef);
 
@@ -32,14 +34,22 @@ void HariMain(void)
 
     for(;;) {
         io_cli();
-        if (fifo8_status(&keyfifo) == 0) {
+        if (fifo8_status(&keyfifo) + fifo8_status(&mousefifo) == 0) {
             io_stihlt();
         } else {
-            i = fifo8_get(&keyfifo);
-            io_sti();
-            re_sprintf(s, "%x", i);
-            boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
-            putfonts8_asc(binfo->vram, binfo->scrnx, 0, 16,  COL8_FFFFFF, s);
+            if (fifo8_status(&keyfifo) != 0) {
+                i = fifo8_get(&keyfifo);
+                io_sti();
+                re_sprintf(s, "%x", i);
+                boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
+                putfonts8_asc(binfo->vram, binfo->scrnx, 0, 16,  COL8_FFFFFF, s);
+            } else if (fifo8_status(&mousefifo) != 0) {
+                i = fifo8_get(&mousefifo);
+                io_sti();
+                re_sprintf(s, "%x", i);
+                boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 32, 16, 47, 31);
+                putfonts8_asc(binfo->vram, binfo->scrnx, 32, 16, COL8_FFFFFF, s);
+            }
         }
     }
 }
