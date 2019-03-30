@@ -1,6 +1,7 @@
 OSNAME = haribote
 GCC = gcc
 CFLAGS = -march=i486 -g -m32 -nostdlib
+UTIL := ../util
 
 default:
 	make img
@@ -16,11 +17,8 @@ nasmfunc.o: nasmfunc.asm Makefile
 	# -f : select an output format
 	nasm -g -f elf -o nasmfunc.o nasmfunc.asm
 
-hankaku.o: convert_hankaku.c Makefile
-	$(GCC) -m32 -o hankaku.o convert_hankaku.c
-
-hankaku.c: hankaku.o hankaku.txt Makefile
-	./hankaku.o
+hankaku.c: $(UTIL)/hankaku.c Makefile
+	cp $(UTIL)/hankaku.c ./
 
 FILES = bootpack.c hankaku.c graphic.c dsctbl.c mysprintf.c int.c fifo.c nasmfunc.o
 bootpack.hrb: $(FILES) har.lds Makefile
