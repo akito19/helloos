@@ -4,7 +4,7 @@ unsigned int memtest(unsigned int start, unsigned int end);
 
 void HariMain(void)
 {
-    struct BOOTINFO *binfo = (struct BOOTINFO *) 0x0ff0;
+    struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
     struct MOUSE_DEC mdec;
     char s[40], mcursor[256], keybuf[32], mousebuf[128];
     int i, mx, my;
@@ -99,6 +99,7 @@ unsigned int memtest(unsigned int start, unsigned int end)
     eflg = io_load_eflags();
     eflg |= EFLAGS_AC_BIT;  // AC_bit = 1
     io_store_eflags(eflg);
+    eflg = io_load_eflags();
     if ((eflg & EFLAGS_AC_BIT) != 0) {
         // 386 では AC = 1 にしても自動で0に戻ってしまう
         flg486 = 1;

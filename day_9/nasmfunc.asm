@@ -10,7 +10,7 @@ GLOBAL  io_load_eflags, io_store_eflags
 GLOBAL  load_gdtr, load_idtr
 GLOBAL  asm_inthandler21, asm_inthandler27, asm_inthandler2c
 GLOBAL  load_cr0, store_cr0
-GLOBAL  memtest_sub, mts_loop, mts_fin
+GLOBAL  memtest_sub
 EXTERN  inthandler21, inthandler27, inthandler2c
 
 [SECTION .text]     ; object fileでは，これを書いてからプログラムを書く
