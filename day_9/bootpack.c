@@ -1,5 +1,8 @@
 #include "bootpack.h"
 
+unsigned int memtest(unsigned int start, unsigned int end);
+unsigned int memtest_sub(unsigned int start, unsigned int end);
+
 void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0x0ff0;
@@ -16,6 +19,7 @@ void HariMain(void)
     io_out8(PIC1_IMR, 0xef);
 
     init_keyboard();
+    enable_mouse(&mdec);
 
     init_palette();
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
@@ -26,7 +30,9 @@ void HariMain(void)
     re_sprintf(s, "(%d, %d)", mx, my);
     putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
 
-    enable_mouse(&mdec);
+    i = memtest(0x00400000, 0xbfffffff) / (1024 * 1024);
+    re_sprintf(s, "memory %dMB", i);
+    putfonts8_asc(binfo->vram, binfo->scrnx, 0, 32, COL8_FFFFFF, s);
 
     for(;;) {
         io_cli();
@@ -80,4 +86,65 @@ void HariMain(void)
             }
         }
     }
+}
+
+#define EFLAGS_AC_BIT      0x00040000
+#define CR0_CACHE_DISABLE  0x60000000
+
+unsigned int memtest(unsigned int start, unsigned int end)
+{
+    char flg486 = 0;
+    unsigned int eflg, cr0, i;
+
+    // プロセッサが 386 か 486 以降なのかの確認
+    eflg = io_load_eflags();
+    eflg |= EFLAGS_AC_BIT;  // AC_bit = 1
+    io_store_eflags(eflg);
+    if ((eflg & EFLAGS_AC_BIT) != 0) {
+        // 386 では AC = 1 にしても自動で0に戻ってしまう
+        flg486 = 1;
+    }
+    // `~` はbit反転
+    // 0x00040000 -> 0xfffbffff
+    eflg &= ~EFLAGS_AC_BIT; // AC-bot = 0
+    io_store_eflags(eflg);
+
+    if (flg486 != 0) {
+        cr0 = load_cr0();
+        cr0 &= CR0_CACHE_DISABLE; // cache無効化
+        store_cr0(cr0);
+    }
+
+    i = memtest_sub(start, end);
+
+    if (flg486 != 0) {
+        cr0 = load_cr0();
+        cr0 &= ~CR0_CACHE_DISABLE; // cache 有効化
+        store_cr0(cr0);
+    }
+
+    return i;
+}
+
+// start から end までのアドレスの中で，使えるメモリがどこまであるかを調べて返す
+unsigned int memtest_sub(unsigned int start, unsigned int end)
+{
+    unsigned int i, *p, old, pat0 = 0xaa55aa55, pat1 = 0x55aa55aa;
+    for (i = start; i <= end; i += 0x1000) {
+        p = (unsigned int *) (i + 0xffc);
+        old = *p;  // 変更前の値を保持しておく
+        *p = pat0; // ためしに書いてみる
+        *p ^= 0xffffffff; // 反転してみる, `^` はXOR
+        if (*p != pat1) { // 反転結果になったか
+            not_memory:
+                *p = old;
+                break;
+        }
+        *p ^= 0xffffffff;
+        if (*p != pat0) { // 反転結果になったか
+            goto not_memory;
+        }
+        *p = old;  // 戻す
+    }
+    return i;
 }
