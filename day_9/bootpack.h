@@ -10,25 +10,25 @@ struct BOOTINFO { // 0x0ff0 - 0x0fff
 #define ADR_BOOTINFO    0x00000ff0
 
 // nasmfunc.asm
-void io_hlt(void);
-void io_cli(void);
-void io_sti(void);
-void io_stihlt(void);
-int io_in8(int port);
-void io_out8(int port, int data);
-int io_load_eflags(void);
-void io_store_eflags(int eflags);
-void load_gdtr(int limit, int addr);
-void load_idtr(int limit, int addr);
-int load_cr0(void);
-void store_cr0(int cr0);
-void asm_inthandler21(void);
-void asm_inthandler27(void);
-void asm_inthandler2c(void);
-int memtest_sub(unsigned int start, unsigned int end);
+extern void io_hlt(void);
+extern void io_cli(void);
+extern void io_sti(void);
+extern void io_stihlt(void);
+extern int io_in8(int port);
+extern void io_out8(int port, int data);
+extern int io_load_eflags(void);
+extern void io_store_eflags(int eflags);
+extern void load_gdtr(int limit, int addr);
+extern void load_idtr(int limit, int addr);
+extern int load_cr0(void);
+extern void store_cr0(int cr0);
+extern void asm_inthandler21(void);
+extern void asm_inthandler27(void);
+extern void asm_inthandler2c(void);
+extern int memtest_sub(unsigned int start, unsigned int end);
 
 // original
-void re_sprintf(char *str, char *fmt, ...);
+int mysprintf(char *str, const char *fmt, ...);
 
 // fifo.c
 struct FIFO8 {
