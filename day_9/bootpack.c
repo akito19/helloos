@@ -1,13 +1,30 @@
 #include "bootpack.h"
 
+#define MEMMAN_FREES  4092  // これで約32KB
+#define MEMMAN_ADDR 0x003c0000
+
+struct FREEINFO { // 空き情報
+    unsigned int addr, size;
+};
+struct MEMMAN { // メモリ管理
+    int frees, maxfrees, lostsize, losts;
+    struct FREEINFO free[MEMMAN_FREES];
+};
+
 unsigned int memtest(unsigned int start, unsigned int end);
+void memman_init(struct MEMMAN *man);
+unsigned int memman_total(struct MEMMAN *man);
+unsigned int memman_alloc(struct MEMMAN *man, unsigned int size);
+int memman_free(struct MEMMAN *man, unsigned int addr, unsigned int size);
 
 void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
     struct MOUSE_DEC mdec;
+    struct MEMMAN *memman = (struct MEMMAM *) MEMMAN_ADDR;
     char s[40], mcursor[256], keybuf[32], mousebuf[128];
     int i, mx, my;
+    unsigned int memtotal;
 
     init_gdtidt();
     init_pic();
@@ -19,6 +36,10 @@ void HariMain(void)
 
     init_keyboard();
     enable_mouse(&mdec);
+    memtotal = memtest(0x00400000, 0xbfffffff);
+    memman_init(memman);
+    memman_free(memman, 0x00001000, 0x0009e000); // Make memory free bwtween 0x00001000 and 0x0009e000
+    memman_free(memman, 0x00400000, memtotal - 0x00400000);
 
     init_palette();
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
@@ -30,7 +51,7 @@ void HariMain(void)
     putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
 
     i = memtest(0x00400000, 0xbfffffff) / (1024 * 1024);
-    mysprintf(s, "memory %dMB", i);
+    mysprintf(s, "memory %d MB   free: %d KB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
     putfonts8_asc(binfo->vram, binfo->scrnx, 0, 32, COL8_FFFFFF, s);
 
     for(;;) {
@@ -124,4 +145,112 @@ unsigned int memtest(unsigned int start, unsigned int end)
     }
 
     return i;
+}
+
+void memman_init(struct MEMMAN *man)
+{
+    man->frees = 0;    // 空き情報の個数
+    man->maxfrees = 0; // 状況観察用: frees の最大値
+    man->lostsize = 0; // 開放に失敗した合計サイズ
+    man->losts = 0;    // 開放に失敗した回数
+    return;
+}
+
+// 空きサイズの合計を報告
+unsigned int memman_total(struct MEMMAN *man)
+{
+    unsigned int i, t = 0;
+    for (i = 0; i < man->frees; i++) {
+        t += man->free[i].size;
+    }
+    return t;
+}
+
+// メモリ確保
+unsigned int memman_alloc(struct MEMMAN *man, unsigned int size)
+{
+    unsigned int i, a;
+    for (i = 0; i < man->frees; i++) {
+        // 十分な広さの空きを発見
+        if (man->free[i].size >= size) {
+            a = man->free[i].addr;
+            man->free[i].addr += size;
+            man->free[i].size -= size;
+            if (man->free[i].size == 0) {
+                // free[i] がなくなったので前へ詰める
+                man->frees--;
+                for (; i < man->frees; i++) {
+                    man->free[i] = man->free[i + 1]; // 構造体の代入
+                }
+            }
+            return a;
+        }
+    }
+    return 0; // 空きがない場合
+}
+
+// メモリ解放
+int memman_free(struct MEMMAN *man, unsigned int addr, unsigned int size)
+{
+    int i, j;
+    // まとめやすさを考えると， `free[]` が `addr` 順に並んでいる方がいいので，
+    // 先にどこのアドレスに入れるべきかを決める．
+    for (i = 0; i < man->frees; i++) {
+        if (man->free[i].addr > addr) {
+            break;
+        }
+    }
+
+    // free[i - 1].addr < addr < free[i].addr
+    if (i > 0) {
+        // 前のアドレスに空きがある
+        if (man->free[i - 1].addr + man->free[i - 1].size == addr) {
+            // 前の空き領域にまとめられる
+            man->free[i - 1].size += size;
+            if (i < man->frees) {
+                // 後ろにも空きがある
+                if (addr + size == man->free[i].addr) {
+                    // まとめられる
+                    man->free[i - 1].size += man->free[i].size;
+                    // man->free[i] を削除し，ここで free[i] がなくなるので前へつめる
+                    man->frees--;
+                    for (; i < man->frees; i++) {
+                        man->free[i] = man->free[i + 1]; // 構造体の代入
+                    }
+                }
+            }
+            return 0; // 成功終了
+        }
+    }
+
+    // 前のアドレスとはまとめられなかった
+    if (i < man->frees) {
+        // 後ろがある
+        if (addr + size == man->free[i].addr) {
+            // 後ろとはまとめられる
+            man->free[i].addr = addr;
+            man->free[i].size += size;
+            return 0; // 成功終了
+        }
+    }
+
+    // 前後のアドレスとまとめられない
+    if (man->frees < MEMMAN_FREES) {
+        // free[i] よりも後ろを，後ろへずらして隙間を作る
+        for (j = man->frees; j > i; j++) {
+            man->free[j] = man->free[j - 1];
+        }
+        man->frees++;
+        if (man->maxfrees < man->frees) {
+            man->maxfrees = man->frees; // 最大値を更新
+        }
+        man->free[i].addr = addr;
+        man->free[i].size = size;
+        return 0; // 成功終了
+    }
+
+    // 後ろにずらせなかった
+    man->losts++;
+    man->lostsize += size;
+    return -1; // 失敗終了
 }
