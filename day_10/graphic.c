@@ -28,7 +28,7 @@ void init_palette(void)
     return;
 }
 
-void init_screen(char *vram, int x, int y)
+void init_screen8(char *vram, int x, int y)
 {
     boxfill8(vram, x, COL8_008484,      0,      0, x -  1, y - 29);
     boxfill8(vram, x, COL8_C6C6C6,      0, y - 28, x -  1, y - 28);
@@ -50,7 +50,7 @@ void init_screen(char *vram, int x, int y)
     return;
 }
 
-void init_mouse_cursor(char *mouse, char bc)
+void init_mouse_cursor8(char *mouse, char bc)
 {
     static char cursor[16][16] = {
         "**************..",   // 1

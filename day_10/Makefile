@@ -20,7 +20,9 @@ nasmfunc.o: nasmfunc.asm Makefile
 hankaku.c: $(UTIL)/hankaku.c Makefile
 	cp $(UTIL)/hankaku.c ./
 
-FILES = bootpack.c hankaku.c graphic.c dsctbl.c mysprintf.c int.c fifo.c keyboard.c mouse.c memory.c nasmfunc.o
+FILES = bootpack.c hankaku.c graphic.c dsctbl.c mysprintf.c \
+				int.c fifo.c keyboard.c mouse.c memory.c sheet.c \
+				nasmfunc.o
 bootpack.hrb: $(FILES) har.lds Makefile
 	# http://softwaretechnique.jp/OS_Development/startup_kernel.html
 	#
