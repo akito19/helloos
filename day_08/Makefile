@@ -1,7 +1,7 @@
 OSNAME = haribote
 GCC = gcc
 CFLAGS = -march=i486 -g -m32 -nostdlib
-UTIL := ../util
+UTIL := ../utils
 
 default:
 	make img
