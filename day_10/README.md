@@ -42,4 +42,3 @@ if ((i & 0xfff) != 0) {
 ```
 i = (i + 0xfff) & 0xfffff000;
 ```
-

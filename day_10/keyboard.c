@@ -2,9 +2,6 @@
 
 struct FIFO8 keyfifo;
 
-// Define as header.
-#define PORT_KEYDAT           0x0060
-#define PORT_KEYCMD           0x0064
 // Use following in this file only.
 #define PORT_KEYSTA           0x0064
 #define KEYSTA_SEND_NOTREADY  0x02
