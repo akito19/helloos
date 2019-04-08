@@ -1,7 +1,7 @@
 OSNAME = haribote
 GCC = gcc
 CFLAGS = -march=i486 -g -m32 -nostdlib
-UTIL := ../util
+UTIL := ../utils
 
 default:
 	make img
@@ -20,7 +20,7 @@ nasmfunc.o: nasmfunc.asm Makefile
 hankaku.c: $(UTIL)/hankaku.c Makefile
 	cp $(UTIL)/hankaku.c ./
 
-FILES = bootpack.c hankaku.c graphic.c dsctbl.c mysprintf.c int.c fifo.c keyboard.c mouse.c nasmfunc.o
+FILES = bootpack.c hankaku.c graphic.c dsctbl.c mysprintf.c int.c fifo.c nasmfunc.o
 bootpack.hrb: $(FILES) har.lds Makefile
 	# http://softwaretechnique.jp/OS_Development/startup_kernel.html
 	#
@@ -48,7 +48,7 @@ img:
 
 run:
 	make img
-	qemu-system-i386 -m 32 -fda $(OSNAME).img
+	qemu-system-i386 -fda $(OSNAME).img
 
 clean:
 	rm *.lst *.bin *.sys *.img *.hrb *.o
