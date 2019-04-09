@@ -50,8 +50,8 @@ void HariMain(void)
     sheet_slide(sht_mouse, mx, my);
     sheet_slide(sht_win, 80, 72);
     sheet_updown(sht_back, 0);
-    sheet_updown(sht_win, 1);
-    sheet_updown(sht_mouse, 2);
+    sheet_updown(sht_win, 2);
+    sheet_updown(sht_mouse, 1);
     mysprintf(s, "(%d, %d)", mx, my);
     putfonts8_asc(buf_back, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
     mysprintf(s, "memory %d MB   free: %d KB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
