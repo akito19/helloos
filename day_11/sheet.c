@@ -69,6 +69,7 @@ void sheet_updown(struct SHEET *sht, int height)
                 ctl->sheets[h]->height = h;
             }
             ctl->sheets[height] = sht;
+            sheet_refreshsub(ctl, sht->vx0, sht->vy0, sht->vx0 + sht->bxsize, sht->vy0 + sht->bysize, height + 1);
         } else { // 非表示化
             if (ctl->top > old) {
                 // 上になっているものをおろす
@@ -78,9 +79,8 @@ void sheet_updown(struct SHEET *sht, int height)
                 }
             }
             ctl->top--; // 表示中のシートが1つ減るので，一番上の高さが変わる
+            sheet_refreshsub(ctl, sht->vx0, sht->vy0, sht->vx0 + sht->bxsize, sht->vy0 + sht->bysize, 0);
         }
-        // 新しいシートの情報に沿って画面を描き直す
-        sheet_refreshsub(ctl, sht->vx0, sht->vy0, sht->vx0 + sht->bxsize, sht->vy0 + sht->bysize);
     } else if (old < height) { // 以前よりも高くなる
         if (old >= 0) {
             // 間のものを押し下げる
@@ -99,7 +99,7 @@ void sheet_updown(struct SHEET *sht, int height)
             ctl->top++; // 表示中のシートが1つ増えるので，一番上の高さが増える
         }
         // 新しいシートの情報に沿って画面を描き直す
-        sheet_refreshsub(ctl, sht->vx0, sht->vy0, sht->vx0 + sht->bxsize, sht->vy0 + sht->bysize);
+        sheet_refreshsub(ctl, sht->vx0, sht->vy0, sht->vx0 + sht->bxsize, sht->vy0 + sht->bysize, height);
     }
     return;
 }
@@ -107,7 +107,7 @@ void sheet_updown(struct SHEET *sht, int height)
 void sheet_refresh(struct SHEET *sht, int bx0, int by0, int bx1, int by1)
 {
     if (sht->height >= 0) { // もしも表示中なら，新しいシートの情報に沿って画面を描き直す
-        sheet_refreshsub(sht->ctl, sht->vx0 + bx0, sht->vy0 + by0, sht->vx0 + bx1, sht->vy0 + by1);
+        sheet_refreshsub(sht->ctl, sht->vx0 + bx0, sht->vy0 + by0, sht->vx0 + bx1, sht->vy0 + by1, sht->height);
     }
     return;
 }
@@ -118,8 +118,8 @@ void sheet_slide(struct SHEET *sht, int vx0, int vy0)
     sht->vx0 = vx0;
     sht->vy0 = vy0;
     if (sht->height >= 0) { // もし表示中なら新しいシートの情報に沿って画面を描き直す
-        sheet_refreshsub(sht->ctl, old_vx0, old_vy0, old_vx0 + sht->bxsize, old_vy0 + sht->bysize);
-        sheet_refreshsub(sht->ctl, vx0, vy0, vx0 + sht->bxsize, vy0 + sht->bysize);
+        sheet_refreshsub(sht->ctl, old_vx0, old_vy0, old_vx0 + sht->bxsize, old_vy0 + sht->bysize, 0);
+        sheet_refreshsub(sht->ctl, vx0, vy0, vx0 + sht->bxsize, vy0 + sht->bysize, sht->height);
     }
     return;
 }
@@ -133,7 +133,7 @@ void sheet_free(struct SHEET *sht)
     return;
 }
 
-void sheet_refreshsub(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1)
+void sheet_refreshsub(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1, int h0)
 {
     int h, bx, by, vx, vy, bx0, by0, bx1, by1;
     unsigned char *buf, c, *vram = ctl->vram;
@@ -145,7 +145,7 @@ void sheet_refreshsub(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1)
     if (vx1 > ctl->xsize) { vx1 = ctl->xsize; }
     if (vy1 > ctl->ysize) { vy1 = ctl->ysize; }
 
-    for (h = 0; h <= ctl->top; h++) {
+    for (h = h0; h <= ctl->top; h++) {
         sht = ctl->sheets[h];
         buf = sht->buf;
         // vx0-vy1 を使って，bx0-by1 を逆算する
