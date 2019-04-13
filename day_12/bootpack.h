@@ -164,5 +164,9 @@ void sheet_refresh(struct SHEET *sht, int bx0, int by0, int bx1, int by1);
 void sheet_slide(struct SHEET *sht, int vx0, int vy0);
 
 // timer.c
+struct TIMERCTL {
+    unsigned int count;
+};
+extern struct TIMERCTL timerctl;
 void init_pit(void);
 void inthandler20(int *esp);
