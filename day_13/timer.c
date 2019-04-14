@@ -50,25 +50,47 @@ void timer_init(struct TIMER *timer, struct FIFO32 *fifo, int data)
 
 void timer_settime(struct TIMER *timer, unsigned int timeout)
 {
-    int e, i, j;
+    int e;
+    struct TIMER *t, *s;
     timer->timeout = timeout + timerctl.count;
     timer->flags = TIMER_FLAGS_USING;
     e = io_load_eflags();
     io_cli();
+    timerctl.using++;
+    if (timerctl.using == 1) {
+        // 動作中のタイマはこれ1つになる場合
+        timerctl.t0 = timer;
+        timer->next = 0; // 次はない
+        timerctl.next = timer->timeout;
+        io_store_eflags(e);
+        return;
+    }
+    t = timerctl.t0;
+    if (timer->timeout <= t->timeout) {
+        // 先頭に入れる場合（よりタイムアウトが短いものがセットされる場合？）
+        timerctl.t0 = timer;
+        timer->next = t;
+        io_store_eflags(e);
+        return;
+    }
     // どこの timer に追加したらいいのか探す
-    for (i = 0; i < timerctl.using; i++) {
-        if (timerctl.timers[i]->timeout >= timer->timeout) {
-            break;
+    for (;;) {
+        s = t;
+        t = t->next;
+        if (t == 0) {
+            break; // 一番うしろになった
+        }
+        if (timer->timeout <= t->timeout) {
+            // s, t の間に入れる場合
+            s->next = timer;
+            timer->next = t;
+            io_store_eflags(e);
+            return;
         }
     }
-    // 後ろをずらす
-    for (j = timerctl.using; j > i; j--) {
-        timerctl.timers[j] = timerctl.timers[j - 1];
-    }
-    timerctl.using++;
-    // 空いた隙間にいれる
-    timerctl.timers[i] = timer;
-    timerctl.next = timerctl.timers[0]->timeout;
+    // 一番うしろに入れる場合
+    s->next = timer;
+    timer->next = 0;
     io_store_eflags(e);
     return;
 }
@@ -76,27 +98,30 @@ void timer_settime(struct TIMER *timer, unsigned int timeout)
 void inthandler20(int *esp)
 {
     int i, j;
+    struct TIMER *timer;
     io_out8(PIC0_OCW2, 0x60); // IRQ-00 の受付完了をPICに通知
     timerctl.count++;
     if (timerctl.next > timerctl.count) {
         return;
     }
+    timer = timerctl.t0;  // 先頭番地をとりあえず timer に代入
     for (i = 0; i < timerctl.using; i++) {
         // timersのタイマはすべて動作中のものなので，flagsを確認しない
-        if (timerctl.timers[i]->timeout > timerctl.count) {
+        if (timer->timeout > timerctl.count) {
             break;
         }
         // Timeout!
-        timerctl.timers[i]->flags = TIMER_FLAGS_ALLOC;
-        fifo32_put(timerctl.timers[i]->fifo, timerctl.timers[i]->data);
+        timer->flags = TIMER_FLAGS_ALLOC;
+        fifo32_put(timer->fifo, timer->data);
+        timer = timer->next; // 次のタイマの番地をtimerに代入
     }
     // ちょうど i 個のタイマがタイムアウトしたので，残りをずらす
-    timerctl.using -= 1;
-    for (j = 0; j < timerctl.using; j++) {
-        timerctl.timers[j] = timerctl.timers[i + j];
-    }
+    timerctl.using -= i;
+    timerctl.t0 = timer;
+
+    // timerctl.next の設定
     if (timerctl.using > 0) {
-        timerctl.next = timerctl.timers[0]->timeout;
+        timerctl.next = timerctl.t0->timeout;
     } else {
         timerctl.next = 0xffffffff;
     }
