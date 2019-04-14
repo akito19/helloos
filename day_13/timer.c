@@ -11,15 +11,20 @@ struct TIMERCTL timerctl;
 void init_pit(void)
 {
     int i;
+    struct TIMER *t;
     io_out8(PIT_CTRL, 0x34);
     io_out8(PIT_CNT0, 0x9c);
     io_out8(PIT_CNT0, 0x2e);
     timerctl.count = 0;
-    timerctl.next = 0xffffff; // 最初は動作中のタイマがない
-    timerctl.using = 0;
     for (i = 0; i < MAX_TIMER; i++) {
         timerctl.timers0[i].flags = 0; // 未使用
     }
+    t = timer_alloc(); // 1つもらってくる
+    t->timeout = 0xffffffff;
+    t->flags = TIMER_FLAGS_USING;
+    t->next = 0; // 一番後ろ
+    timerctl.t0 = t;  // 今は番兵しかいないので先頭でもある
+    timerctl.next = 0xffffffff; // 番兵しかいないので，番兵の時刻
     return;
 }
 
@@ -56,15 +61,6 @@ void timer_settime(struct TIMER *timer, unsigned int timeout)
     timer->flags = TIMER_FLAGS_USING;
     e = io_load_eflags();
     io_cli();
-    timerctl.using++;
-    if (timerctl.using == 1) {
-        // 動作中のタイマはこれ1つになる場合
-        timerctl.t0 = timer;
-        timer->next = 0; // 次はない
-        timerctl.next = timer->timeout;
-        io_store_eflags(e);
-        return;
-    }
     t = timerctl.t0;
     if (timer->timeout <= t->timeout) {
         // 先頭に入れる場合（よりタイムアウトが短いものがセットされる場合？）
@@ -73,13 +69,10 @@ void timer_settime(struct TIMER *timer, unsigned int timeout)
         io_store_eflags(e);
         return;
     }
-    // どこの timer に追加したらいいのか探す
+    // どこにtimerを追加したらいいのか探す
     for (;;) {
         s = t;
         t = t->next;
-        if (t == 0) {
-            break; // 一番うしろになった
-        }
         if (timer->timeout <= t->timeout) {
             // s, t の間に入れる場合
             s->next = timer;
@@ -105,7 +98,7 @@ void inthandler20(int *esp)
         return;
     }
     timer = timerctl.t0;  // 先頭番地をとりあえず timer に代入
-    for (i = 0; i < timerctl.using; i++) {
+    for (;;) {
         // timersのタイマはすべて動作中のものなので，flagsを確認しない
         if (timer->timeout > timerctl.count) {
             break;
@@ -115,15 +108,8 @@ void inthandler20(int *esp)
         fifo32_put(timer->fifo, timer->data);
         timer = timer->next; // 次のタイマの番地をtimerに代入
     }
-    // ちょうど i 個のタイマがタイムアウトしたので，残りをずらす
-    timerctl.using -= i;
     timerctl.t0 = timer;
-
     // timerctl.next の設定
-    if (timerctl.using > 0) {
-        timerctl.next = timerctl.t0->timeout;
-    } else {
-        timerctl.next = 0xffffffff;
-    }
+    timerctl.next = timerctl.t0->timeout;
     return;
 }
