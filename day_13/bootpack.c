@@ -1,6 +1,7 @@
 #include "bootpack.h"
 
 void make_window8(unsigned char *buf, int xsize, int ysize, char *title);
+void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, int i);
 
 void HariMain(void)
 {
@@ -106,9 +107,7 @@ void HariMain(void)
                     if ((mdec.btn & 0x04) != 0) {
                         s[2] = 'C';
                     }
-                    boxfill8(buf_back, binfo->scrnx, COL8_008484, 32, 16, 32 + 15 * 8 - 1, 31);
-                    putfonts8_asc(buf_back, binfo->scrnx, 32, 16, COL8_FFFFFF, s);
-                    sheet_refresh(sht_back, 32, 16, 32 + 15 * 8, 32);
+                    putfonts8_asc_sht(sht_back, 32, 16, COL8_FFFFFF, COL8_008484, s, 15);
                     // マウスカーソルの移動
                     mx += mdec.x;
                     my += mdec.y;
@@ -204,5 +203,13 @@ void make_window8(unsigned char *buf, int xsize, int ysize, char *title)
             buf[(5 + y) * xsize + (xsize - 21 + x)] = c;
         }
     }
+    return;
+}
+
+void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, int i)
+{
+    boxfill8(sht->buf, sht->bxsize, b, x, y, x + 1 * 8 - 1, y + 15);
+    putfonts8_asc(sht->buf, sht->bxsize, x, y, c, s);
+    sheet_refresh(sht, x, y, x + 1 * 8, y + 16);
     return;
 }
