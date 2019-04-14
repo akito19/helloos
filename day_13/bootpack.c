@@ -10,35 +10,33 @@ void HariMain(void)
     struct MEMMAN *memman = (struct MEMMAM *) MEMMAN_ADDR;
     struct SHTCTL *shtctl;
     struct SHEET *sht_back, *sht_mouse, *sht_win;
-    struct FIFO8 timerfifo;
+    struct FIFO32 fifo;
     struct TIMER *timer, *timer2, *timer3;
-    char s[40], keybuf[32], mousebuf[128], timerbuf[8], timerbuf2[8], timerbuf3[8];
-    int i, mx, my;
-    unsigned int memtotal, count = 0;
+    char s[40];
+    int i, mx, my, count, fifobuf[128];
+    unsigned int memtotal;
     unsigned char *buf_back, buf_mouse[256], *buf_win;
 
     init_gdtidt();
     init_pic();
     io_sti(); // Set Interrupt Flag, 有効時，外部装置からの割り込みを受け付けるようになる．
-    fifo8_init(&keyfifo, 32, keybuf);
-    fifo8_init(&mousefifo, 128, mousebuf);
     init_pit();
+    fifo32_init(&fifo, 128, fifobuf);
+    init_keyboard(&fifo, 256);
+    enable_mouse(&fifo, 512, &mdec);
     io_out8(PIC0_IMR, 0xf8);
     io_out8(PIC1_IMR, 0xef);
 
-    fifo8_init(&timerfifo, 8, timerbuf);
     timer = timer_alloc();
-    timer_init(timer, &timerfifo, 10);
+    timer_init(timer, &fifo, 10);
     timer_settime(timer, 1000);
     timer2 = timer_alloc();
-    timer_init(timer2, &timerfifo, 3);
+    timer_init(timer2, &fifo, 3);
     timer_settime(timer2, 300);
     timer3 = timer_alloc();
-    timer_init(timer3, &timerfifo, 1);
+    timer_init(timer3, &fifo, 1);
     timer_settime(timer3, 50);
 
-    init_keyboard();
-    enable_mouse(&mdec);
     memtotal = memtest(0x00400000, 0xbfffffff);
     memman_init(memman);
     memman_free(memman, 0x00001000, 0x0009e000); // Make memory free bwtween 0x00001000 and 0x0009e000
@@ -66,30 +64,25 @@ void HariMain(void)
     sheet_updown(sht_win, 1);
     sheet_updown(sht_mouse, 2);
     mysprintf(s, "(%d, %d)", mx, my);
-    putfonts8_asc(buf_back, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
+    putfonts8_asc_sht(sht_back, 0, 0, COL8_FFFFFF, COL8_008484, s, 10);
     mysprintf(s, "memory %d MB   free: %d KB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
-    putfonts8_asc(buf_back, binfo->scrnx, 0, 32, COL8_FFFFFF, s);
-    sheet_refresh(sht_back, 0, 0, binfo->scrnx, 48);
+    putfonts8_asc_sht(sht_back, 0, 32, COL8_FFFFFF, COL8_008484, s, 40);
 
     for(;;) {
-        mysprintf(s, "%d", timerctl.count);
         putfonts8_asc_sht(sht_win, 40, 28, COL8_000000, COL8_C6C6C6, s, 10);
+        count++;
 
         io_cli();
-        if (fifo8_status(&keyfifo) + fifo8_status(&mousefifo) + fifo8_status(&timerfifo) == 0) {
+        if (fifo32_status(&fifo) == 0) {
             io_sti();
         } else {
-            if (fifo8_status(&keyfifo) != 0) {
-                i = fifo8_get(&keyfifo);
-                io_sti();
-                mysprintf(s, "%X", i);
-                boxfill8(buf_back, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
-                putfonts8_asc(buf_back, binfo->scrnx, 0, 16,  COL8_FFFFFF, s);
-                sheet_refresh(sht_back, 0, 16, 16, 32);
-            } else if (fifo8_status(&mousefifo) != 0) {
-                i = fifo8_get(&mousefifo);
-                io_sti();
-                if (mouse_decode(&mdec, i) != 0) {
+            i = fifo32_get(&fifo);
+            io_sti();
+            if (256 <= i && i <= 511) { // Keyboard data
+                mysprintf(s, "%X", i - 256);
+                putfonts8_asc_sht(sht_back, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);
+            } else if (512 <= i && i <= 767) { // Mouce data
+                if (mouse_decode(&mdec, i - 512) != 0) {
                     // データが3バイト揃ったので表示
                     mysprintf(s, "[lcr %d %d]", mdec.x, mdec.y);
                     if ((mdec.btn & 0x01) != 0) {
@@ -118,29 +111,26 @@ void HariMain(void)
                         my = binfo->scrny - 1;
                     }
                     mysprintf(s, "(%d, %d)", mx, my);
-                    boxfill8(buf_back, binfo->scrnx, COL8_008484, 0, 0, 79, 15); // 座標消す
-                    putfonts8_asc(buf_back, binfo->scrnx, 0, 0, COL8_FFFFFF, s); // 座標書く
-                    sheet_refresh(sht_back, 0, 0, 80, 16);
-                    sheet_slide(sht_mouse, mx, my); // sheet_refresh を含む
+                    putfonts8_asc_sht(sht_back, 0, 0, COL8_FFFFFF, COL8_008484, s, 10);
+                    sheet_slide(sht_mouse, mx, my);
                 }
-            } else if (fifo8_status(&timerfifo) != 0) {
-                i = fifo8_get(&timerfifo); // タイムアウトしたtimerを探す
-                io_sti();
-                if (i == 10) {
-                    putfonts8_asc_sht(sht_back, 0, 64, COL8_FFFFFF, COL8_008484, "10[sec]", 7);
-                } else if (i == 3) {
-                    putfonts8_asc_sht(sht_back, 0, 80, COL8_FFFFFF, COL8_008484, "3[sec]", 6);
-                } else {
-                    if (i != 0) {
-                        timer_init(timer3, &timerfifo, 0); // 次は0を
-                        boxfill8(buf_back, binfo->scrnx, COL8_FFFFFF, 8, 96, 15, 111);
-                    } else {
-                        timer_init(timer3, &timerfifo, 1); // 次は1を
-                        boxfill8(buf_back, binfo->scrnx, COL8_008484, 8, 96, 15, 111);
-                    }
-                    timer_settime(timer3, 50);
-                    sheet_refresh(sht_back, 8, 96, 16, 112);
-                }
+            } else if (i == 10) { // 10 seconds timer
+                putfonts8_asc_sht(sht_back, 0, 64, COL8_FFFFFF, COL8_008484, "10[sec]", 7);
+                mysprintf(s, "%d", count);
+                putfonts8_asc_sht(sht_back, 40, 28, COL8_000000, COL8_C6C6C6, s, 10);
+            } else if (i == 3) { // 3 seconds timer
+                putfonts8_asc_sht(sht_back, 0, 80, COL8_FFFFFF, COL8_008484, "3[sec]", 6);
+                count = 0;
+            } else if (i == 1) { // Timer for cursor
+                timer_init(timer3, &fifo, 0); // 次は0を
+                boxfill8(buf_back, binfo->scrnx, COL8_FFFFFF, 8, 96, 15, 111);
+                timer_settime(timer3, 50);
+                sheet_refresh(sht_back, 8, 96, 16, 112);
+            } else if (i == 0) {
+                timer_init(timer3, &fifo, 1); // 次は1を
+                boxfill8(buf_back, binfo->scrnx, COL8_008484, 8, 96, 15, 111);
+                timer_settime(timer3, 50);
+                sheet_refresh(sht_back, 8, 96, 16, 112);
             }
         }
     }
