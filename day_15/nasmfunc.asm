@@ -10,6 +10,7 @@ GLOBAL  io_load_eflags, io_store_eflags
 GLOBAL  load_gdtr, load_idtr
 GLOBAL  asm_inthandler20, asm_inthandler21, asm_inthandler27, asm_inthandler2c
 GLOBAL  load_cr0, store_cr0
+GLOBAL  load_tr, taskswitch4
 GLOBAL  memtest_sub
 EXTERN  inthandler20, inthandler21, inthandler27, inthandler2c
 
@@ -160,6 +161,14 @@ load_cr0:
 store_cr0:
 	MOV     EAX,[ESP+4]
 	MOV     CR0,EAX
+	RET
+
+load_tr:
+	LTR     [ESP+4]     ; tr
+	RET
+
+taskswitch4:
+	JMP     4*8:0
 	RET
 
 memtest_sub:  ; unsigned int memtest_sub(unsigned int start, unsigned int end)

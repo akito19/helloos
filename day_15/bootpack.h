@@ -27,6 +27,8 @@ extern void asm_inthandler21(void);
 extern void asm_inthandler27(void);
 extern void asm_inthandler2c(void);
 extern int memtest_sub(unsigned int start, unsigned int end);
+extern void load_tr(int tr);
+extern void taskswitch4(void);
 
 // original
 int mysprintf(char *str, const char *fmt, ...);
@@ -90,6 +92,7 @@ void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 #define AR_DATA32_RW    0x4092
 #define AR_CODE32_ER    0x409a
 #define AR_INTGATE32    0x008e
+#define AR_TSS32        0x0089
 
 // int.c
 void init_pic(void);
