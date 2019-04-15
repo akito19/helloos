@@ -28,8 +28,7 @@ extern void asm_inthandler27(void);
 extern void asm_inthandler2c(void);
 extern int memtest_sub(unsigned int start, unsigned int end);
 extern void load_tr(int tr);
-extern void taskswitch3(void);
-extern void taskswitch4(void);
+extern void farjmp(int eip, int cs);
 
 // original
 int mysprintf(char *str, const char *fmt, ...);
