@@ -28,6 +28,7 @@ extern void asm_inthandler27(void);
 extern void asm_inthandler2c(void);
 extern int memtest_sub(unsigned int start, unsigned int end);
 extern void load_tr(int tr);
+extern void taskswitch3(void);
 extern void taskswitch4(void);
 
 // original
