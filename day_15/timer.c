@@ -66,6 +66,7 @@ void timer_settime(struct TIMER *timer, unsigned int timeout)
         // 先頭に入れる場合（よりタイムアウトが短いものがセットされる場合？）
         timerctl.t0 = timer;
         timer->next = t;
+        timerctl.next = timer->timeout;
         io_store_eflags(e);
         return;
     }
@@ -81,16 +82,10 @@ void timer_settime(struct TIMER *timer, unsigned int timeout)
             return;
         }
     }
-    // 一番うしろに入れる場合
-    s->next = timer;
-    timer->next = 0;
-    io_store_eflags(e);
-    return;
 }
 
 void inthandler20(int *esp)
 {
-    int i, j;
     struct TIMER *timer;
     io_out8(PIC0_OCW2, 0x60); // IRQ-00 の受付完了をPICに通知
     timerctl.count++;
@@ -109,7 +104,6 @@ void inthandler20(int *esp)
         timer = timer->next; // 次のタイマの番地をtimerに代入
     }
     timerctl.t0 = timer;
-    // timerctl.next の設定
-    timerctl.next = timerctl.t0->timeout;
+    timerctl.next = timer->timeout;
     return;
 }

@@ -22,7 +22,6 @@ void init_palette(void)
         0x00, 0x84, 0x84, /* 14: 暗い水色, #008484 */
         0x84, 0x84, 0x84, /* 15: 暗い灰色, #848484 */
     };
-
     /* static char 命令はデータにしか使えないが `DB` 命令相当 */
     set_palette(0, 15, table_rgb);
     return;
@@ -46,29 +45,28 @@ void init_screen8(char *vram, int x, int y)
     boxfill8(vram, x, COL8_848484, x - 47, y - 23, x - 47, y -  4);
     boxfill8(vram, x, COL8_FFFFFF, x - 47, y -  3, x -  4, y -  3);
     boxfill8(vram, x, COL8_FFFFFF, x -  3, y - 24, x -  3, y -  3);
-
     return;
 }
 
 void init_mouse_cursor8(char *mouse, char bc)
 {
     static char cursor[16][16] = {
-        "**************..",   // 1
-        "*ooooooooooo*...",   // 2
-        "*oooooooooo*....",   // 3
-        "*ooooooooo*.....",   // 4
-        "*oooooooo*......",   // 5
-        "*ooooooo*.......",   // 6
-        "*ooooooo*.......",   // 7
-        "*oooooooo*......",   // 8
-        "*oooo**ooo*.....",   // 9
-        "*ooo*..*ooo*....",   // 10
-        "*oo*....*ooo*...",   // 11
-        "*o*......*ooo*..",   // 12
-        "**........*ooo*.",   // 13
-        "*..........*ooo*",   // 14
-        ".. .........*oo*",   // 15
-        ".............***",   // 16
+        "**************..",
+        "*ooooooooooo*...",
+        "*oooooooooo*....",
+        "*ooooooooo*.....",
+        "*oooooooo*......",
+        "*ooooooo*.......",
+        "*ooooooo*.......",
+        "*oooooooo*......",
+        "*oooo**ooo*.....",
+        "*ooo*..*ooo*....",
+        "*oo*....*ooo*...",
+        "*o*......*ooo*..",
+        "**........*ooo*.",
+        "*..........*ooo*",
+        ".. .........*oo*",
+        ".............***",
     };
     int x, y;
 

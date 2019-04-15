@@ -35,7 +35,7 @@ struct SHEET *sheet_alloc(struct SHTCTL *ctl)
 {
     struct SHEET *sht;
     int i;
-    for (i - 0; i < MAX_SHEETS; i++) {
+    for (i = 0; i < MAX_SHEETS; i++) {
         if (ctl->sheets0[i].flags == 0) {
             sht = &ctl->sheets0[i]; // `ctl->sheets0[i]` のメモリ番地
             sht->flags = SHEET_USE; // 使用中マーク
@@ -96,8 +96,8 @@ void sheet_updown(struct SHEET *sht, int height)
         if (old >= 0) {
             // 間のものを押し下げる
             for (h = old; h < height; h++) {
-                ctl->sheets[h + 1] = ctl->sheets[h];
-                ctl->sheets[h + 1]->height = h + 1;
+                ctl->sheets[h] = ctl->sheets[h + 1];
+                ctl->sheets[h]->height = h;
             }
             ctl->sheets[height] = sht;
         } else { // 非表示状態から表示状態へ
