@@ -1,4 +1,9 @@
-VBEMODE EQU 0x105
+VBEMODE EQU 0x107
+; Display resolution
+; 0x100:  640 x  400 x 8 bit
+; 0x101:  640 x  480 x 8 bit
+; 0x103: 1024 x  768 x 8 bit
+; 0x107: 1280 x 1024 x 8 bit
 
 BOTPAK  EQU	0x00280000    ; bootpackのロード先
 DSKCAC  EQU	0x00100000    ; ディスクキャッシュの場所
