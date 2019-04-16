@@ -87,12 +87,14 @@ void timer_settime(struct TIMER *timer, unsigned int timeout)
 void inthandler20(int *esp)
 {
     struct TIMER *timer;
+    char ts = 0;
     io_out8(PIC0_OCW2, 0x60); // IRQ-00 の受付完了をPICに通知
     timerctl.count++;
     if (timerctl.next > timerctl.count) {
         return;
     }
     timer = timerctl.t0;  // 先頭番地をとりあえず timer に代入
+
     for (;;) {
         // timersのタイマはすべて動作中のものなので，flagsを確認しない
         if (timer->timeout > timerctl.count) {
@@ -100,10 +102,17 @@ void inthandler20(int *esp)
         }
         // Timeout!
         timer->flags = TIMER_FLAGS_ALLOC;
-        fifo32_put(timer->fifo, timer->data);
+        if (timer != mt_timer) {
+            fifo32_put(timer->fifo, timer->data);
+        } else {
+            ts = 1; // mt_time がタイムアウトした
+        }
         timer = timer->next; // 次のタイマの番地をtimerに代入
     }
     timerctl.t0 = timer;
     timerctl.next = timer->timeout;
+    if (ts != 0) {
+        mt_taskswitch();
+    }
     return;
 }
