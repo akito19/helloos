@@ -16,7 +16,7 @@ void fifo32_init(struct FIFO32 *fifo, int size, int *buf)
 // FIFO へデータを送り込んで蓄える
 int fifo32_put(struct FIFO32 *fifo, int data)
 {
-    if (fifo->free = 0) {
+    if (fifo->free == 0) {
         // 空きがなくて溢れた
         fifo->flags |= FLAGS_OVERRUN;
         return -1;
