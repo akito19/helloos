@@ -50,7 +50,7 @@ img:
 
 run:
 	make img
-	qemu-system-i386 -m 32 -fda $(OSNAME).img
+	qemu-system-i386 -m 32 -enable-kvm -fda $(OSNAME).img
 
 clean:
 	rm *.lst *.bin *.sys *.img *.hrb *.o
