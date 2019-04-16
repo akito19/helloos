@@ -9,21 +9,6 @@
 struct FIFO32 *keyfifo;
 int keydata0;
 
-void wait_KBC_sendready(void);
-
-void init_keyboard(struct FIFO32 *fifo, int data0)
-{
-    // 書き込み先のFIFOバッファを記憶
-    keyfifo = fifo;
-    keydata0 = data0;
-    // Initialize keyboard controller
-    wait_KBC_sendready();
-    io_out8(PORT_KEYCMD, KEYCMD_WRITE_MODE);
-    wait_KBC_sendready();
-    io_out8(PORT_KEYDAT, KBC_MODE);
-    return;
-}
-
 // PS/2キーボードからの割り込み
 void inthandler21(int *esp)
 {
@@ -43,5 +28,18 @@ void wait_KBC_sendready(void)
             break;
         }
     }
+    return;
+}
+
+void init_keyboard(struct FIFO32 *fifo, int data0)
+{
+    // 書き込み先のFIFOバッファを記憶
+    keyfifo = fifo;
+    keydata0 = data0;
+    // Initialize keyboard controller
+    wait_KBC_sendready();
+    io_out8(PORT_KEYCMD, KEYCMD_WRITE_MODE);
+    wait_KBC_sendready();
+    io_out8(PORT_KEYDAT, KBC_MODE);
     return;
 }

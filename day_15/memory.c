@@ -129,7 +129,7 @@ int memman_free(struct MEMMAN *man, unsigned int addr, unsigned int size)
     // 前後のアドレスとまとめられない
     if (man->frees < MEMMAN_FREES) {
         // free[i] よりも後ろを，後ろへずらして隙間を作る
-        for (j = man->frees; j > i; j++) {
+        for (j = man->frees; j > i; j--) {
             man->free[j] = man->free[j - 1];
         }
         man->frees++;

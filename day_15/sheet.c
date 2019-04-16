@@ -23,7 +23,7 @@ struct SHTCTL *shtctl_init(struct MEMMAN *memman, unsigned char *vram, int xsize
     ctl->xsize = xsize;
     ctl->ysize = ysize;
     ctl->top = -1; // シートは1枚もない
-    for(i = 0; i < MAX_SHEETS; i++) {
+    for (i = 0; i < MAX_SHEETS; i++) {
         ctl->sheets0[i].flags = 0; // 未使用マーク
         ctl->sheets0[i].ctl = ctl; // 所属を記録
     }
@@ -174,7 +174,7 @@ void sheet_refreshsub(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1, in
         if (bx1 > sht->bxsize) { bx1 = sht->bxsize; }
         if (by1 > sht->bysize) { by1 = sht->bysize; }
 
-        for(by = by0; by < by1; by++) {
+        for (by = by0; by < by1; by++) {
             vy = sht->vy0 + by;
             for (bx = bx0; bx < bx1; bx++) {
                 vx = sht->vx0 + bx;

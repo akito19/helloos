@@ -40,7 +40,7 @@ $(OSNAME).img: ipl10.bin $(OSNAME).sys Makefile
 	mcopy $(OSNAME).sys -i $(OSNAME).img ::
 
 vdi: $(OSNAME).img Makefile
-	VboxManage convertfromraw --format VDI $(OSNAME).img $(OSNAME).vdi
+	vboxmanage convertfromraw --format VDI $(OSNAME).img $(OSNAME).vdi
 
 asm:
 	make -r ipl10.bin

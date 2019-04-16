@@ -15,18 +15,16 @@ struct TSS32 {
 void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
+    struct FIFO32 fifo;
+    char s[40];
+    int fifobuf[128];
+    struct TIMER *timer, *timer2, *timer3;
+    int mx, my, i, cursor_x, cursor_c, task_b_esp;
+    unsigned int memtotal;
     struct MOUSE_DEC mdec;
     struct MEMMAN *memman = (struct MEMMAM *) MEMMAN_ADDR;
     struct SHTCTL *shtctl;
     struct SHEET *sht_back, *sht_mouse, *sht_win;
-    struct FIFO32 fifo;
-    struct TIMER *timer, *timer2, *timer3;
-    struct TSS32 tss_a, tss_b;
-    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
-    char s[40];
-    int i, mx, my, count, fifobuf[128];
-    int cursor_x, cursor_c, task_b_esp;
-    unsigned int memtotal;
     unsigned char *buf_back, buf_mouse[256], *buf_win;
     static char keytable[0x54] = {
         0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '^', 0,   0,
@@ -36,6 +34,8 @@ void HariMain(void)
         0,   0,   0,   0,   0,   0,   0,   '7', '8', '9', '-', '4', '5', '6', '+', '1',
         '2', '3', '0', '.'
     };
+    struct TSS32 tss_a, tss_b;
+    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
 
     init_gdtidt();
     init_pic();
@@ -75,6 +75,9 @@ void HariMain(void)
     init_screen8(buf_back, binfo->scrnx, binfo->scrny);
     init_mouse_cursor8(buf_mouse, 99); // 背景色は99
     make_window8(buf_win, 160, 52, "Window");
+    make_textbox8(sht_win, 8, 28, 144, 16, COL8_FFFFFF);
+    cursor_x = 8;
+    cursor_c = COL8_FFFFFF;
     sheet_slide(sht_back, 0, 0);
     mx = (binfo->scrnx - 16) / 2; // 画面中央となるように座標計算
     my = (binfo->scrny - 28 - 16) / 2;
@@ -87,10 +90,6 @@ void HariMain(void)
     putfonts8_asc_sht(sht_back, 0, 0, COL8_FFFFFF, COL8_008484, s, 10);
     mysprintf(s, "memory %d MB   free: %d KB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
     putfonts8_asc_sht(sht_back, 0, 32, COL8_FFFFFF, COL8_008484, s, 40);
-
-    make_textbox8(sht_win, 8, 28, 144, 16, COL8_FFFFFF);
-    cursor_x = 8;
-    cursor_c = COL8_FFFFFF;
 
     tss_a.ldtr = 0;
     tss_a.iomap = 0x40000000;
