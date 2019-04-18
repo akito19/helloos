@@ -18,6 +18,7 @@ struct TASK *task_init(struct MEMMAN *memman)
     }
     task = task_alloc();
     task->flags = 2;  // 動作中のマーク．flag とは...
+    task->priority = 2; // 0.2 秒
     taskctl->running = 1;
     taskctl->now = 0;
     taskctl->tasks[0] = task;
@@ -55,23 +56,31 @@ struct TASK *task_alloc(void)
     return 0; // すべて使用中
 }
 
-void task_run(struct TASK *task)
+void task_run(struct TASK *task, int priority)
 {
-    task->flags = 2; // 動作中
-    taskctl->tasks[taskctl->running] = task;
-    taskctl->running++;
+    if (priority > 0) {
+        task->priority = priority;
+    }
+    if (task->flags != 2) {
+        task->flags = 2; // 動作中
+        taskctl->tasks[taskctl->running] = task;
+        taskctl->running++;
+    }
     return;
 }
 
 void task_switch(void)
 {
-    timer_settime(task_timer, 2);
+    struct TASK *task;
+    taskctl->now++;
+    if (taskctl->now == taskctl->running) {
+        taskctl->now = 0;
+    }
+    task = taskctl->tasks[taskctl->now];
+    timer_settime(task_timer, task->priority);
+    // task が高々1つのときに farjump を実行すると，CPUが無意味なタスクジャンプと判定してOSのエラー扱いとするので，task数が 2 以上であるかを確認
     if (taskctl->running >= 2) {
-        taskctl->now++;
-        if (taskctl->now == taskctl->running) {
-            taskctl->now = 0;
-        }
-        farjmp(0, taskctl->tasks[taskctl->now]->sel);
+        farjmp(0, task->sel);
     }
     return;
 }
