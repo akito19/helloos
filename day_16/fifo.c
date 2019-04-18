@@ -2,7 +2,7 @@
 
 #define FLAGS_OVERRUN 0x0001
 
-void fifo32_init(struct FIFO32 *fifo, int size, int *buf)
+void fifo32_init(struct FIFO32 *fifo, int size, int *buf, struct TASK *task)
 {
     fifo->size = size;
     fifo->buf = buf;
@@ -10,6 +10,7 @@ void fifo32_init(struct FIFO32 *fifo, int size, int *buf)
     fifo->flags = 0;
     fifo->w = 0; // 書き込み位置
     fifo->r = 0; // 読み込み位置
+    fifo->task = task; // データが入ったときに起こすタスク
     return;
 }
 
@@ -27,6 +28,11 @@ int fifo32_put(struct FIFO32 *fifo, int data)
         fifo->w = 0;
     }
     fifo->free--;
+    if (fifo->task != 0) {
+        if (fifo->task->flags != 2) { // task がスリープしている場合
+            task_run(fifo->task);
+        }
+    }
     return 0;
 }
 
