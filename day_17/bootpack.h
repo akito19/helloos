@@ -184,7 +184,7 @@ void timer_init(struct TIMER *timer, struct FIFO32 *fifo, int data);
 void timer_settime(struct TIMER *timer, unsigned int timeout);
 void inthandler20(int *esp);
 
-// matask.c
+// mtask.c
 #define MAX_TASKS 1000
 #define TASK_GDT0 3    // TSS を GDT の何番から割り当てるのか
 #define MAX_TASKS_LV 100
@@ -221,3 +221,4 @@ void task_switchsub(void);
 void task_sleep(struct TASK *task);
 void task_add(struct TASK *task);
 void task_remove(struct TASK *task);
+void task_idle(void);
