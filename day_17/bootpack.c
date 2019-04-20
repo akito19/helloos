@@ -1,5 +1,7 @@
 #include "bootpack.h"
 
+#define KEYCMD_LED  0xed
+
 void console_task(struct SHEET *sheet);
 void make_window8(unsigned char *buf, int xsize, int ysize, char *title, char act);
 void make_wtitle8(unsigned char *buf, int xsize, char *title, char act);
@@ -9,7 +11,7 @@ void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c);
 void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
-    struct FIFO32 fifo;
+    struct FIFO32 fifo, keycmd;
     struct MOUSE_DEC mdec;
     struct MEMMAN *memman = (struct MEMMAM *) MEMMAN_ADDR;
     struct SHTCTL *shtctl;
@@ -19,9 +21,9 @@ void HariMain(void)
     struct TIMER *timer;
     unsigned char *buf_back, *buf_cons, buf_mouse[256], *buf_win;
     char s[40];
-    int fifobuf[128];
+    int fifobuf[128], keycmd_buf[32];
     int mx, my, i, cursor_x, cursor_c;
-    int key_to = 0, key_shift = 0, key_leds = (binfo->leds >> 4) & 7; // `key_leds` は CapsLock や NumLock の状態を持っている
+    int key_to = 0, key_shift = 0, key_leds = (binfo->leds >> 4) & 7, keycmd_wait = -1;
     unsigned int memtotal;
     static char keytable0[0x80] = {
         0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '^', 0,   0,
@@ -122,7 +124,17 @@ void HariMain(void)
     mysprintf(s, "memory %d MB   free: %d KB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
     putfonts8_asc_sht(sht_back, 0, 32, COL8_FFFFFF, COL8_008484, s, 40);
 
+    // 最初にキーボード状態との食い違いがないように，設定しておく
+    fifo32_put(&keycmd, KEYCMD_LED);
+    fifo32_put(&keycmd, key_leds);
+
     for(;;) {
+        if (fifo32_status(&keycmd) > 0 && keycmd_wait < 0) {
+            // キーボードコントローラに送るデータがあれば送る
+            keycmd_wait = fifo32_get(&keycmd);
+            wait_KBC_sendready();
+            io_out8(PORT_KEYDAT, keycmd_wait);
+        }
         io_cli();
         if (fifo32_status(&fifo) == 0) {
             task_sleep(task_a);
@@ -192,6 +204,28 @@ void HariMain(void)
                 }
                 if (i == 256 + 0xb6) { // 右シフト OFF
                     key_shift &= ~2;
+                }
+                if (i == 256 + 0x3a) { // CapsLock
+                    key_leds ^= 4;
+                    fifo32_put(&keycmd, KEYCMD_LED);
+                    fifo32_put(&keycmd, key_leds);
+                }
+                if (i == 256 + 0x45) { // NumLock
+                    key_leds ^= 2;
+                    fifo32_put(&keycmd, KEYCMD_LED);
+                    fifo32_put(&keycmd, key_leds);
+                }
+                if (i == 256 + 0x46) { // ScrollLock
+                    key_leds ^= 1;
+                    fifo32_put(&keycmd, KEYCMD_LED);
+                    fifo32_put(&keycmd, key_leds);
+                }
+                if (i == 256 + 0xfa) { // キーボードがデータを無事に受け取った
+                    keycmd_wait = -1;
+                }
+                if (i == 256 + 0xfe) { // キーボードがデータの受け取りに失敗した
+                    wait_KBC_sendready();
+                    io_out8(PORT_KEYDAT, keycmd_wait);
                 }
                 // カーソルの再表示
                 boxfill8(sht_win->buf, sht_win->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
