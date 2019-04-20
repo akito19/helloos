@@ -21,7 +21,7 @@ void HariMain(void)
     char s[40];
     int fifobuf[128];
     int mx, my, i, cursor_x, cursor_c;
-    int key_to = 0, key_shift = 0;
+    int key_to = 0, key_shift = 0, key_leds = (binfo->leds >> 4) & 7; // `key_leds` は CapsLock や NumLock の状態を持っている
     unsigned int memtotal;
     static char keytable0[0x80] = {
         0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '^', 0,   0,
@@ -141,6 +141,11 @@ void HariMain(void)
                     }
                 } else {
                     s[0] = 0;
+                }
+                if ('A' <= s[0] && s[0] <= 'Z') { // 文字入力がアルファベット
+                    if ((key_leds & 4) == 0 && key_shift == 0 || ((key_leds & 4) != 0 && key_shift != 0)) {
+                        s[0] += 0x20; // 大文字を小文字に変換
+                    }
                 }
                 if (s[0] != 0) { // 通常文字
                     if (key_to == 0) { // task Aへkeyboard dataを送る
