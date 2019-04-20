@@ -21,15 +21,27 @@ void HariMain(void)
     char s[40];
     int fifobuf[128];
     int mx, my, i, cursor_x, cursor_c;
-    int key_to = 0;
+    int key_to = 0, key_shift = 0;
     unsigned int memtotal;
-    static char keytable[0x54] = {
+    static char keytable0[0x80] = {
         0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '^', 0,   0,
         'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '@', '[', 0,   0,   'A', 'S',
         'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', ':', 0,   0,   ']', 'Z', 'X', 'C', 'V',
         'B', 'N', 'M', ',', '.', '/', 0,   '*', 0,   ' ', 0,   0,   0,   0,   0,   0,
         0,   0,   0,   0,   0,   0,   0,   '7', '8', '9', '-', '4', '5', '6', '+', '1',
-        '2', '3', '0', '.'
+        '2', '3', '0', '.', 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,   0x5c, 0,  0,   0,   0,   0,   0,   0,   0,   0,   0x5c, 0,  0
+    };
+    static char keytable1[0x80] = {
+        0,   0,   '!', 0x22, '#', '$', '%', '&', 0x27, '(', ')', '~', '=', '~', 0,   0,
+        'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '`', '{', 0,   0,   'A', 'S',
+        'D', 'F', 'G', 'H', 'J', 'K', 'L', '+', '*', 0,   0,   '}', 'Z', 'X', 'C', 'V',
+        'B', 'N', 'M', '<', '>', '?', 0,   '*', 0,   ' ', 0,   0,   0,   0,   0,   0,
+        0,   0,   0,   0,   0,   0,   0,   '7', '8', '9', '-', '4', '5', '6', '+', '1',
+        '2', '3', '0', '.', 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,   '_', 0,   0,   0,   0,   0,   0,   0,   0,   0,   '|', 0,   0
     };
 
     init_gdtidt();
@@ -121,16 +133,24 @@ void HariMain(void)
             if (256 <= i && i <= 511) { // Keyboard data
                 mysprintf(s, "%X", i - 256);
                 putfonts8_asc_sht(sht_back, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);
-                if (i < 0x54 + 256 && keytable[i - 256] != 0) { // 通常文字
+                if (i < 0x80 + 256) { // キーコードを文字コードに変換
+                    if (key_shift == 0) {
+                        s[0] = keytable0[i - 256];
+                    } else {
+                        s[0] = keytable1[i - 256];
+                    }
+                } else {
+                    s[0] = 0;
+                }
+                if (s[0] != 0) { // 通常文字
                     if (key_to == 0) { // task Aへkeyboard dataを送る
                         if (cursor_x < 128) {
-                            s[0] = keytable[i - 256];
                             s[1] = 0;
                             putfonts8_asc_sht(sht_win, cursor_x, 28, COL8_000000, COL8_FFFFFF, s, 1);
                             cursor_x += 8;
                         }
                     } else { // コンソールへ
-                        fifo32_put(&task_cons->fifo, keytable[i - 256] + 256);
+                        fifo32_put(&task_cons->fifo, s[0] + 256);
                     }
                 }
                 if (i == 256 + 0x0e) { // バックスペース
@@ -155,6 +175,18 @@ void HariMain(void)
                     }
                     sheet_refresh(sht_win, 0, 0, sht_win->bxsize, 21);
                     sheet_refresh(sht_cons, 0, 0, sht_win->bxsize, 21);
+                }
+                if (i == 256 + 0x2a) { // 左シフト ON
+                    key_shift |= 1;
+                }
+                if (i == 256 + 0x36) { // 右シフト ON
+                    key_shift |= 2;
+                }
+                if (i == 256 + 0xaa) { // 左シフト OFF
+                    key_shift &= ~1;
+                }
+                if (i == 256 + 0xb6) { // 右シフト OFF
+                    key_shift &= ~2;
                 }
                 // カーソルの再表示
                 boxfill8(sht_win->buf, sht_win->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
