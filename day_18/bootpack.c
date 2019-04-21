@@ -8,6 +8,7 @@ void make_window8(unsigned char *buf, int xsize, int ysize, char *title, char ac
 void make_wtitle8(unsigned char *buf, int xsize, char *title, char act);
 void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, int l);
 void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c);
+int strcmp(const char *s1, const char *s2);
 
 void HariMain(void)
 {
@@ -341,7 +342,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
                     cmdline[cursor_x / 8 - 2] = 0;
                     cursor_y = cons_newline(cursor_y, sheet);
                     // コマンド実行
-                    if (cmdline[0] == 'm' && cmdline[1] == 'e' && cmdline[2] == 'm' && cmdline[3] == 0) {
+                    if (strcmp(cmdline, "mem") == 0) {
                         // `mem` command
                         mysprintf(s, "total %dMB", memtotal / (1024 * 1024));
                         putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
@@ -350,6 +351,15 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
                         putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
                         cursor_y = cons_newline(cursor_y, sheet);
                         cursor_y = cons_newline(cursor_y, sheet);
+                    } else if (strcmp(cmdline, "cls") == 0) {
+                        // `cls` command
+                        for (y = 28; y < 28 + 128; y++) {
+                            for (x = 8; x < 8 + 240; x++) {
+                                sheet->buf[x + y * sheet->bxsize] = COL8_000000;
+                            }
+                        }
+                        sheet_refresh(sheet, 8, 28, 8 + 240, 28 + 128);
+                        cursor_y = 28;
                     } else if (cmdline[0] != 0) {
                         // コマンドではなく，改行でもない
                         putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "Bad command.", 12);
@@ -483,4 +493,15 @@ void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c)
     boxfill8(sht->buf, sht->bxsize, COL8_C6C6C6, x1 + 1, y0 - 2, x1 + 1, y1 + 1);
     boxfill8(sht->buf, sht->bxsize,           c, x0 - 1, y0 - 1, x1 + 0, y1 + 0);
     return;
+}
+
+// https://wisteria0410ss.hatenablog.com/entry/2019/02/21/151455
+int strcmp(const char *s1, const char *s2)
+{
+    int i;
+    for (i = 0;; i++) {
+        if (s1[i] > s2[i]) return 1;
+        if (s1[i] < s2[i]) return -1;
+        if (s1[i] == 0 && s2[i] == 0) return 0;
+    }
 }
