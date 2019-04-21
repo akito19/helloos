@@ -34,6 +34,8 @@ extern void farjmp(int eip, int cs);
 // original
 int mysprintf(char *str, const char *fmt, ...);
 int strcmp(const char *s1, const char *s2);
+// int strncmp(const char *s1, const char *s2, unsigned int length);
+int starts_with(const char *s, const char *prefix);
 
 // fifo.c
 struct FIFO32 {

@@ -13,6 +13,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
     struct TASK *task = task_now();
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
     struct FILEINFO *finfo = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);
+    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
     int i, fifobuf[128], cursor_x = 16, cursor_y = 28, cursor_c = -1;
     int x, y;
     int *fat = (int *) memman_alloc_4k(memman, 4 * 2880);
@@ -22,7 +23,6 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
     timer = timer_alloc();
     timer_init(timer, &task->fifo, 1);
     timer_settime(timer, 50);
-
     file_readfat(fat, (unsigned char *) (ADR_DISKIMG + 0x000200));
 
     // prompt表示
@@ -71,7 +71,6 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
                     cursor_y = cons_newline(cursor_y, sheet);
                     // コマンド実行
                     if (strcmp(cmdline, "mem") == 0) {
-                        // `mem` command
                         mysprintf(s, "total %dMB", memtotal / (1024 * 1024));
                         putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
                         cursor_y = cons_newline(cursor_y, sheet);
@@ -80,7 +79,6 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
                         cursor_y = cons_newline(cursor_y, sheet);
                         cursor_y = cons_newline(cursor_y, sheet);
                     } else if (strcmp(cmdline, "cls") == 0) {
-                        // `cls` command
                         for (y = 28; y < 28 + 128; y++) {
                             for (x = 8; x < 8 + 240; x++) {
                                 sheet->buf[x + y * sheet->bxsize] = COL8_000000;
@@ -88,8 +86,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
                         }
                         sheet_refresh(sheet, 8, 28, 8 + 240, 28 + 128);
                         cursor_y = 28;
-                    } else if (strcmp(cmdline, "ls") == 0) {
-                        // `dir` command
+                    } else if (strcmp(cmdline, "dir") == 0) {
                         for (x = 0; x < 224; x++) {
                             if (finfo[x].name[0] == 0x00) {
                                 break;
@@ -109,8 +106,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
                             }
                         }
                         cursor_y = cons_newline(cursor_y, sheet);
-                    } else if (strcmp(cmdline, "type ")) { // 書籍内では第三引数に引数 5 を渡しているが，`strcmp` は独自定義なので見なかったことにする．
-                        // `type` command
+                    } else if (starts_with(cmdline, "type ") || strcmp(cmdline, "type") == 0) {
                         // ファイル名を準備
                         for (y = 0; y < 11; y++) {
                             s[y] = ' ';
@@ -154,7 +150,7 @@ type_next_file:
                                 s[1] = 0;
                                 if (s[0] == 0x09) { // tab
                                     for (;;) {
-                                        putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, s, 1);
+                                        putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, " ", 1);
                                         cursor_x += 8;
                                         if (cursor_x == 8 + 240) { // 右端まで来たので改行
                                             cursor_x = 8;
@@ -180,6 +176,45 @@ type_next_file:
                             }
                             memman_free_4k(memman, (int) p, finfo[x].size);
                         } else {
+                            putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "File not found.", 15);
+                            cursor_y = cons_newline(cursor_y, sheet);
+                        }
+                        cursor_y = cons_newline(cursor_y, sheet);
+                    } else if (strcmp(cmdline, "hlt") == 0) {
+                        // hlt.hrb アプリケーションを起動
+                        for (y = 0; y < 11; y++) {
+                            s[y] = ' ';
+                        }
+                        s[0] = 'H';
+                        s[1] = 'L';
+                        s[2] = 'T';
+                        s[8] = 'H';
+                        s[9] = 'R';
+                        s[10] = 'B';
+                        for (x = 0; x < 224; ) {
+                            if (finfo[x].name[0] == 0x00) {
+                                break;
+                            }
+                            if ((finfo[x].type & 0x18) == 0) {
+                                for (y = 0; y < 11; y++) {
+                                    if (finfo[x].name[y] != s[y]) {
+                                        goto hlt_next_file;
+                                    }
+                                }
+                                break; // ファイルが見つかった
+                            }
+hlt_next_file:
+                            x++;
+                        }
+                        if (x < 224 && finfo[x].name[0] != 0x00) {
+                            // ファイルが見つかった場合
+                            p = (char *) memman_alloc_4k(memman, finfo[x].size);
+                            file_loadfile(finfo[x].clustno, finfo[x].size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
+                            set_segmdesc(gdt + 1003, finfo[x].size - 1, (int) p, AR_CODE32_ER);
+                            farjmp(0, 1003 * 8);
+                            memman_free_4k(memman, (int) p, finfo[x].size);
+                        } else {
+                            // ファイルが見つからなかった場合
                             putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "File not found.", 15);
                             cursor_y = cons_newline(cursor_y, sheet);
                         }

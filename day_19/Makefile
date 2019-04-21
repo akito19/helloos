@@ -1,6 +1,7 @@
 OSNAME = haribote
 GCC = gcc
 CFLAGS = -march=i486 -g -m32 -nostdlib
+APPS := hlt.hrb
 UTIL := ../utils
 
 default:
@@ -17,13 +18,16 @@ nasmfunc.o: nasmfunc.asm Makefile
 	# -f : select an output format
 	nasm -g -f elf -o nasmfunc.o nasmfunc.asm
 
+hlt.hrb: hlt.asm Makefile
+	nasm -f elf -o hlt.hrb hlt.asm
+
 hankaku.c: $(UTIL)/hankaku.c Makefile
 	cp $(UTIL)/hankaku.c ./
 
 FILES = bootpack.c hankaku.c graphic.c dsctbl.c int.c \
 				fifo.c keyboard.c mouse.c memory.c sheet.c \
 				timer.c mtask.c window.c console.c file.c \
-				mysprintf.c strcmp.c nasmfunc.o
+				mysprintf.c strncmp.c nasmfunc.o
 bootpack.hrb: $(FILES) har.lds Makefile
 	# http://softwaretechnique.jp/OS_Development/startup_kernel.html
 	#
@@ -35,10 +39,10 @@ bootpack.hrb: $(FILES) har.lds Makefile
 $(OSNAME).sys: asmhead.bin bootpack.hrb Makefile
 	cat asmhead.bin bootpack.hrb > $(OSNAME).sys
 
-$(OSNAME).img: ipl10.bin $(OSNAME).sys Makefile
+$(OSNAME).img: ipl10.bin $(OSNAME).sys $(APPS) Makefile
 	# 1440 => フロッピーディスクの容量
 	mformat -f 1440 -C -B ipl10.bin -i $(OSNAME).img ::
-	mcopy $(OSNAME).sys -i $(OSNAME).img ::
+	mcopy $(OSNAME).sys $(APPS) -i $(OSNAME).img ::
 
 vdi: $(OSNAME).img Makefile
 	vboxmanage convertfromraw --format VDI $(OSNAME).img $(OSNAME).vdi
