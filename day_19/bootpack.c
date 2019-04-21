@@ -389,7 +389,8 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
                             }
                         }
                         cursor_y = cons_newline(cursor_y, sheet);
-                    } else if (cmdline[0] == 't' && cmdline[1] == 'y' && cmdline[2] == 'p' && cmdline[3] == 'e' && cmdline[4] == ' ') {
+                    } else if (strcmp(cmdline, "type ")) { // 書籍内では第三引数に引数 5 を渡しているが，`strcmp` は独自定義なので見なかったことにする．
+                        // `type` command
                         // ファイル名を準備
                         for (y = 0; y < 11; y++) {
                             s[y] = ' ';
@@ -431,11 +432,30 @@ type_next_file:
                             for (x = 0; x < y; x++) {
                                 s[0] = p[x];
                                 s[1] = 0;
-                                putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, s, 1);
-                                cursor_x += 8;
-                                if (cursor_x == 8 + 240) { // 右端まで来たので改行
+                                if (s[0] == 0x09) { // tab
+                                    for (;;) {
+                                        putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, s, 1);
+                                        cursor_x += 8;
+                                        if (cursor_x == 8 + 240) { // 右端まで来たので改行
+                                            cursor_x = 8;
+                                            cursor_y = cons_newline(cursor_y, sheet);
+                                        }
+                                        if (((cursor_x - 8) & 0x1f) == 0) {
+                                            break;  // 32 で割り切れたら break
+                                        }
+                                    }
+                                } else if (s[0] == 0x0a) { // 改行
                                     cursor_x = 8;
                                     cursor_y = cons_newline(cursor_y, sheet);
+                                } else if (s[0] == 0x0d) { // 復帰
+                                    // とりあえずなにもしない
+                                } else { // 普通の文字
+                                    putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, s, 1);
+                                    cursor_x += 8;
+                                    if (cursor_x == 8 + 240) {
+                                        cursor_x = 8;
+                                        cursor_y = cons_newline(cursor_y, sheet);
+                                    }
                                 }
                             }
                         } else {
