@@ -33,6 +33,7 @@ extern void farjmp(int eip, int cs);
 
 // original
 int mysprintf(char *str, const char *fmt, ...);
+int strcmp(const char *s1, const char *s2);
 
 // fifo.c
 struct FIFO32 {
@@ -224,3 +225,17 @@ void task_sleep(struct TASK *task);
 void task_add(struct TASK *task);
 void task_remove(struct TASK *task);
 void task_idle(void);
+
+// window.c
+void make_window8(unsigned char *buf, int xsize, int ysize, char *title, char act);
+void make_wtitle8(unsigned char *buf, int xsize, char *title, char act);
+void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, int l);
+void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c);
+
+// console.c
+void console_task(struct SHEET *sheet, unsigned int memtotal);
+int cons_newline(int cursor_y, struct SHEET *sheet);
+
+// file.c
+void file_readfat(int *fat, unsigned char *img);
+void file_loadfile(int clustno, int size, char *buf, int *fat, char *img);
