@@ -10,6 +10,13 @@ void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, i
 void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c);
 int strcmp(const char *s1, const char *s2);
 
+struct FILEINFO {
+    unsigned char name[8], ext[3], type;
+    char reserve[10];
+    unsigned short time, date, clustno;
+    unsigned int size;
+};
+
 void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
@@ -288,6 +295,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
     struct TIMER *timer;
     struct TASK *task = task_now();
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    struct FILEINFO *finfo = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);
     int i, fifobuf[128], cursor_x = 16, cursor_y = 28, cursor_c = -1;
     int x, y;
     char s[30], cmdline[30];
@@ -360,6 +368,27 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
                         }
                         sheet_refresh(sheet, 8, 28, 8 + 240, 28 + 128);
                         cursor_y = 28;
+                    } else if (strcmp(cmdline, "ls") == 0) {
+                        // `dir` command
+                        for (x = 0; x < 224; x++) {
+                            if (finfo[x].name[0] == 0x00) {
+                                break;
+                            }
+                            if (finfo[x].name[0] != 0xe5) {
+                                if ((finfo[x].type & 0x18) == 0) {
+                                    mysprintf(s, "filename.ext  %d", finfo[x].size);
+                                    for (y = 0; y < 8; y++) {
+                                        s[y] = finfo[x].name[y];
+                                    }
+                                    s[9] = finfo[x].ext[0];
+                                    s[10] = finfo[x].ext[1];
+                                    s[11] = finfo[x].ext[2];
+                                    putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
+                                    cursor_y = cons_newline(cursor_y, sheet);
+                                }
+                            }
+                        }
+                        cursor_y = cons_newline(cursor_y, sheet);
                     } else if (cmdline[0] != 0) {
                         // コマンドではなく，改行でもない
                         putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "Bad command.", 12);
