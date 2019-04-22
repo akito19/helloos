@@ -1,11 +1,5 @@
 #include "bootpack.h"
 
-struct CONSOLE {
-    struct SHEET *sht;
-    int cur_x, cur_y, cur_c;
-};
-
-void cons_putchar(struct CONSOLE *cons, int chr, char move);
 void cons_newline(struct CONSOLE *cons);
 void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int memtotal);
 void cmd_mem(struct CONSOLE *cons, unsigned int memtotal);
@@ -26,6 +20,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
     cons.cur_x = 8;
     cons.cur_y = 28;
     cons.cur_c = -1;
+    *((int *) 0x0fec) = (int) &cons;
 
     fifo32_init(&task->fifo, 128, fifobuf, task);
     timer = timer_alloc();

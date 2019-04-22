@@ -34,7 +34,7 @@ bootpack.hrb: $(FILES) har.lds Makefile
 	# `-fno-pic` option it set for a workaround because GCC raised error for following reason:
 	# `bootpack.c:(.text+0x9): undefined reference to `_GLOBAL_OFFSET_TABLE_`
 	# PIC: Programmable Interrupt Controller, 割り込みコントローラ．
-	$(GCC) $(CFLAGS) -T har.lds $(FILES) -o bootpack.hrb -fno-pic
+	$(GCC) $(CFLAGS) -T har.lds $(FILES) -o bootpack.hrb -fno-pic -Wl,-Map=bootpack.map
 
 $(OSNAME).sys: asmhead.bin bootpack.hrb Makefile
 	cat asmhead.bin bootpack.hrb > $(OSNAME).sys

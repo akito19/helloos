@@ -27,6 +27,7 @@ extern void asm_inthandler20(void);
 extern void asm_inthandler21(void);
 extern void asm_inthandler27(void);
 extern void asm_inthandler2c(void);
+extern void asm_cons_putchar(void);
 extern int memtest_sub(unsigned int start, unsigned int end);
 extern void load_tr(int tr);
 extern void farjmp(int eip, int cs);
@@ -235,7 +236,12 @@ void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, i
 void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c);
 
 // console.c
+struct CONSOLE {
+    struct SHEET *sht;
+    int cur_x, cur_y, cur_c;
+};
 void console_task(struct SHEET *sheet, unsigned int memtotal);
+void cons_putchar(struct CONSOLE *cons, int chr, char move);
 
 // file.c
 struct FILEINFO {

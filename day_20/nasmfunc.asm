@@ -9,10 +9,12 @@ GLOBAL  io_out8, io_out16, io_out32
 GLOBAL  io_load_eflags, io_store_eflags
 GLOBAL  load_gdtr, load_idtr
 GLOBAL  asm_inthandler20, asm_inthandler21, asm_inthandler27, asm_inthandler2c
+GLOBAL  asm_cons_putchar;
 GLOBAL  load_cr0, store_cr0
 GLOBAL  load_tr, farjmp
 GLOBAL  memtest_sub
 EXTERN  inthandler20, inthandler21, inthandler27, inthandler2c
+EXTERN  cons_putchar
 
 [SECTION .text]     ; object fileでは，これを書いてからプログラムを書く
 io_hlt:             ; void io_hlt(void); in C lang.
@@ -153,6 +155,15 @@ asm_inthandler2c:
 	POP     DS
 	POP     ES
 	IRETD
+
+asm_cons_putchar:
+	PUSH    1
+	AND     EAX,0xff        ; AH, EAXの上位を 0 にして，EAXに文字コードが入った状態にする
+	PUSH    EAX
+	PUSH    DWORD [0x0fec]  ; memoryの内容を読み込んでその値をpushする
+	CALL    cons_putchar
+	ADD     ESP,12          ; stackに積んだデータを捨てる
+	RET
 
 load_cr0:
 	MOV     EAX,CR0
