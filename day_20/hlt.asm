@@ -1,6 +1,14 @@
 bits 32
-	MOV  AL,'A'
+	MOV  AL,'h'
 	CALL 2*8:0x4e3b  ; @see bootpack.map
-fin:
-	HLT
-	JMP  fin
+	MOV  AL,'e'
+	CALL 2*8:0x4e3b
+	MOV  AL,'l'
+	CALL 2*8:0x4e3b
+	MOV  AL,'l'
+	CALL 2*8:0x4e3b
+	MOV  AL,'l'
+	CALL 2*8:0x4e3b
+	MOV  AL,'o'
+	CALL 2*8:0x4e3b
+	RETF

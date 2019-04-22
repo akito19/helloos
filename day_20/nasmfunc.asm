@@ -9,7 +9,8 @@ GLOBAL  io_out8, io_out16, io_out32
 GLOBAL  io_load_eflags, io_store_eflags
 GLOBAL  load_gdtr, load_idtr
 GLOBAL  asm_inthandler20, asm_inthandler21, asm_inthandler27, asm_inthandler2c
-GLOBAL  asm_cons_putchar;
+GLOBAL  asm_cons_putchar
+GLOBAL  farcall
 GLOBAL  load_cr0, store_cr0
 GLOBAL  load_tr, farjmp
 GLOBAL  memtest_sub
@@ -164,6 +165,10 @@ asm_cons_putchar:
 	CALL    cons_putchar
 	ADD     ESP,12          ; stackに積んだデータを捨てる
 	RETF
+
+farcall:   ; void farcall(int eip, int cs)
+	CALL    FAR [ESP+4]   ; eip, cs
+	RET
 
 load_cr0:
 	MOV     EAX,CR0

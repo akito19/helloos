@@ -31,6 +31,7 @@ extern void asm_cons_putchar(void);
 extern int memtest_sub(unsigned int start, unsigned int end);
 extern void load_tr(int tr);
 extern void farjmp(int eip, int cs);
+extern void farcall(int eip, int cs);
 
 // original
 int mysprintf(char *str, const char *fmt, ...);
