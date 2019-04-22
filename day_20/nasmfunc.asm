@@ -163,7 +163,7 @@ asm_cons_putchar:
 	PUSH    DWORD [0x0fec]  ; memoryの内容を読み込んでその値をpushする
 	CALL    cons_putchar
 	ADD     ESP,12          ; stackに積んだデータを捨てる
-	RET
+	RETF
 
 load_cr0:
 	MOV     EAX,CR0
