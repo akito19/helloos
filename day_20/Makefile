@@ -53,8 +53,7 @@ asm:
 img:
 	make -r $(OSNAME).img
 
-run:
-	make img
+run: img
 	qemu-system-i386 -m 32 -enable-kvm -fda $(OSNAME).img
 
 clean:

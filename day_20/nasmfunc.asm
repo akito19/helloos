@@ -1,6 +1,7 @@
 ; nasmfunc
 ; HLT命令はC言語で生成できないので，アセンブリ言語で対応
 ; http://hrb.osask.jp/wiki/?tools/nask
+section .text     ; object fileでは，これを書いてからプログラムを書く
 
 ; このプログラムに含まれる関数名
 GLOBAL  io_hlt, io_cli, io_sti, io_stihlt
@@ -17,7 +18,6 @@ GLOBAL  memtest_sub
 EXTERN  inthandler20, inthandler21, inthandler27, inthandler2c
 EXTERN  cons_putchar
 
-[SECTION .text]     ; object fileでは，これを書いてからプログラムを書く
 io_hlt:             ; void io_hlt(void); in C lang.
 	HLT
 	RET               ; return
@@ -159,12 +159,14 @@ asm_inthandler2c:
 
 asm_cons_putchar:
 	STI
+	PUSHAD
 	PUSH    1
 	AND     EAX,0xff        ; AH, EAXの上位を 0 にして，EAXに文字コードが入った状態にする
 	PUSH    EAX
 	PUSH    DWORD [0x0fec]  ; memoryの内容を読み込んでその値をpushする
 	CALL    cons_putchar
 	ADD     ESP,12          ; stackに積んだデータを捨てる
+	POPAD
 	IRETD
 
 farcall:   ; void farcall(int eip, int cs)
