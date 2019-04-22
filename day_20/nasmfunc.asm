@@ -10,13 +10,13 @@ GLOBAL  io_out8, io_out16, io_out32
 GLOBAL  io_load_eflags, io_store_eflags
 GLOBAL  load_gdtr, load_idtr
 GLOBAL  asm_inthandler20, asm_inthandler21, asm_inthandler27, asm_inthandler2c
-GLOBAL  asm_cons_putchar
+GLOBAL  asm_hrb_api
 GLOBAL  farcall
 GLOBAL  load_cr0, store_cr0
 GLOBAL  load_tr, farjmp
 GLOBAL  memtest_sub
 EXTERN  inthandler20, inthandler21, inthandler27, inthandler2c
-EXTERN  cons_putchar
+EXTERN  hrb_api
 
 io_hlt:             ; void io_hlt(void); in C lang.
 	HLT
@@ -157,15 +157,12 @@ asm_inthandler2c:
 	POP     ES
 	IRETD
 
-asm_cons_putchar:
+asm_hrb_api:
 	STI
-	PUSHAD
-	PUSH    1
-	AND     EAX,0xff        ; AH, EAXの上位を 0 にして，EAXに文字コードが入った状態にする
-	PUSH    EAX
-	PUSH    DWORD [0x0fec]  ; memoryの内容を読み込んでその値をpushする
-	CALL    cons_putchar
-	ADD     ESP,12          ; stackに積んだデータを捨てる
+	PUSHAD  ; 保存のためのPUSH
+	PUSHAD  ; hrb_apiに渡すためのPUSH
+	CALL    hrb_api
+	ADD     ESP,32
 	POPAD
 	IRETD
 
