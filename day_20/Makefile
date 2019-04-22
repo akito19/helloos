@@ -1,7 +1,7 @@
 OSNAME = haribote
 GCC = gcc
 CFLAGS = -march=i486 -g -m32 -nostdlib
-APPS := hlt.hrb
+APPS := hello.hrb
 UTIL := ../utils
 
 default:
@@ -18,8 +18,8 @@ nasmfunc.o: nasmfunc.asm Makefile
 	# -f : select an output format
 	nasm -g -f elf -o nasmfunc.o nasmfunc.asm
 
-hlt.hrb: hlt.asm Makefile
-	nasm -f elf -o hlt.hrb hlt.asm
+hello.hrb: hello.asm Makefile
+	nasm -f elf -o $(APPS) hello.asm
 
 hankaku.c: $(UTIL)/hankaku.c Makefile
 	cp $(UTIL)/hankaku.c ./

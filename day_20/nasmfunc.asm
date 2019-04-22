@@ -158,13 +158,14 @@ asm_inthandler2c:
 	IRETD
 
 asm_cons_putchar:
+	STI
 	PUSH    1
 	AND     EAX,0xff        ; AH, EAXの上位を 0 にして，EAXに文字コードが入った状態にする
 	PUSH    EAX
 	PUSH    DWORD [0x0fec]  ; memoryの内容を読み込んでその値をpushする
 	CALL    cons_putchar
 	ADD     ESP,12          ; stackに積んだデータを捨てる
-	RETF
+	IRETD
 
 farcall:   ; void farcall(int eip, int cs)
 	CALL    FAR [ESP+4]   ; eip, cs
