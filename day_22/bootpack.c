@@ -13,6 +13,7 @@ void HariMain(void)
     struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
     struct TASK *task_a, *task_cons;
     struct TIMER *timer;
+    struct CONSOLE *cons;
     unsigned char *buf_back, *buf_cons, buf_mouse[256], *buf_win;
     char s[40];
     int fifobuf[128], keycmd_buf[32];
@@ -225,6 +226,14 @@ void HariMain(void)
                 if (i == 256 + 0xfe) { // キーボードがデータの受け取りに失敗した
                     wait_KBC_sendready();
                     io_out8(PORT_KEYDAT, keycmd_wait);
+                }
+                if (i == 256 + 0x3b && key_shift != 0 && task_cons->tss.ss0 != 0) { // shift + F1
+                    cons = (struct CONSOLE *) *((int *) 0x0fec);
+                    cons_putstr0(cons, "\nBreak(key) :\n");
+                    io_cli();
+                    task_cons->tss.eax = (int) &(task_cons->tss.esp0);
+                    task_cons->tss.eip = (int) asm_end_app;
+                    io_sti();
                 }
                 // カーソルの再表示
                 if (cursor_c >= 0) {

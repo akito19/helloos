@@ -37,6 +37,13 @@ BUG1 = bug1.c a.o
 bug1.hrb: bug1.c a.o
 	$(GCC) $(CFLAGS) -T ../har.lds $(BUG1) -o bug1.hrb -fno-pic -Wl,-Map=bug1.map
 
+bug2.hrb: bug2.c
+	$(GCC) $(CFLAGS) -T ../har.lds bug2.c -o bug2.hrb -fno-pic -Wl,-Map=bug2.map
+
+BUG3 = bug3.c a.o
+bug3.hrb: bug3.c
+	$(GCC) $(CFLAGS) -T ../har.lds $(BUG3) -o bug3.o -fno-pic -Wl,-Map=bug3.map
+
 app.o:
 	nasm -f elf -o $(APP_NAME).o $(APP_NAME).asm
 
