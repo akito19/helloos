@@ -9,13 +9,13 @@ GLOBAL  io_in8, io_in16, io_in32
 GLOBAL  io_out8, io_out16, io_out32
 GLOBAL  io_load_eflags, io_store_eflags
 GLOBAL  load_gdtr, load_idtr
-GLOBAL  asm_inthandler20, asm_inthandler21, asm_inthandler27, asm_inthandler2c
+GLOBAL  asm_inthandler20, asm_inthandler21, asm_inthandler27, asm_inthandler2c, asm_inthandler0d
 GLOBAL  asm_hrb_api
 GLOBAL  start_app
 GLOBAL  load_cr0, store_cr0
 GLOBAL  load_tr, farjmp
 GLOBAL  memtest_sub
-EXTERN  inthandler20, inthandler21, inthandler27, inthandler2c
+EXTERN  inthandler20, inthandler21, inthandler27, inthandler2c, inthandler0d
 EXTERN  hrb_api
 
 io_hlt:             ; void io_hlt(void); in C lang.
@@ -91,6 +91,68 @@ load_idtr:          ; void load_idtr(int limit, int addr);
 	MOV   AX,[ESP+4]  ; limit
 	MOV   [ESP+6],AX
 	LIDT  [ESP+6]
+	RET
+
+asm_inthandler0d:
+	STI
+	PUSH    ES
+	PUSH    DS
+	PUSHAD
+	MOV     AX,SS
+	CMP     AX,1*8
+	JNE     .from_app
+; OSが動いているときに割り込まれたのでほぼ今までどおり
+	MOV     EAX,ESP
+	PUSH    SS
+	PUSH    EAX
+	MOV     AX,SS
+	MOV     DS,AX
+	MOV     ES,AX
+	CALL    inthandler20
+	ADD     ESP,8
+	POPAD
+	POP     DS
+	POP     ES
+	ADD     ESP,4      ; INT 0x0d ではこれが必要
+	IRETD
+
+.from_app:
+	CLI
+	MOV     EAX,1*8
+	MOV     DS,AX
+	MOV     ECX,[0xfe4]
+	ADD     ECX,-8
+	MOV     [ECX+4],SS
+	MOV     [ECX],ESP
+	MOV     SS,AX
+	MOV     ES,AX
+	MOV     ESP,ECX
+	STI
+	CALL    inthandler0d
+	CLI
+	CMP     EAX,0
+	JNE     .kill
+	POP     ECX
+	POP     EAX
+	MOV     SS,AX
+	MOV     ESP,ECX
+	POPAD
+	POP     DS
+	POP     ES
+	ADD     ESP,4
+	IRETD
+
+.kill:
+; アプリの異常終了
+	MOV     EAX,1*8
+	MOV     ES,AX
+	MOV     SS,AX
+	MOV     DS,AX
+	MOV     FS,AX
+	MOV     GS,AX
+	MOV     ESP,[0xfe4]  ; start_app のときのESPに無理やりもどす
+	STI
+	POPAD
 	RET
 
 asm_inthandler20:

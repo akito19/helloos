@@ -220,7 +220,7 @@ void cmd_dir(struct CONSOLE *cons)
         }
         if (finfo[i].name[0] != 0xe5) {
             if ((finfo[i].type & 0x18) == 0) {
-                mysprintf(s, "filename.ext  %d\n\n", finfo[i].size);
+                mysprintf(s, "filename.ext  %d\n", finfo[i].size);
                 for (j = 0; j < 8; j++) {
                     s[j] = finfo[i].name[j];
                 }
@@ -325,4 +325,11 @@ void cons_putstr1(struct CONSOLE *cons, char *s, int l)
         cons_putchar(cons, s[i], 1);
     }
     return;
+}
+
+int inthandler0d(int *esp)
+{
+    struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
+    cons_putstr0(cons, "\nINT 0D :\n General Protected Exception.\n");
+    return 1;
 }
