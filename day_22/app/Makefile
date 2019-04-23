@@ -21,6 +21,18 @@ crack1.hrb: crack1.c
 crack2.hrb: crack2.asm
 	nasm -f elf -o crack2.hrb crack2.asm
 
+crack3.hrb: crack3.asm
+	nasm -f elf -o crack3.hrb crack3.asm
+
+crack4.hrb: crack4.asm
+	nasm -f elf -o crack4.hrb crack4.asm
+
+crack5.hrb: crack5.asm
+	nasm -f elf -o crack5.hrb crack5.asm
+
+crack6.hrb: crack6.asm
+	nasm -f elf -o crack6.hrb crack6.asm
+
 app.o:
 	nasm -f elf -o $(APP_NAME).o $(APP_NAME).asm
 
