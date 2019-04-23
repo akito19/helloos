@@ -1,40 +1,31 @@
+.SUFFIXES: .asm .bin
+.SUFFIXES: .c .o
 OSNAME = haribote
-GCC = gcc
-CFLAGS = -march=i486 -g -m32 -nostdlib
-APPS := ./app/*.hrb
+CFLAGS = -march=i486 -m32 -nostdlib -fno-pic -c
+APPS := $(wildcard ./app/*.hrb)
 UTIL := ../utils
 
 default:
 	make img
 
-ipl10.bin: ipl10.asm Makefile
-	nasm ipl10.asm -o ipl10.bin -l ipl10.lst
-
-asmhead.bin: asmhead.asm Makefile
-	nasm asmhead.asm -o asmhead.bin -l asmhead.lst
-
 nasmfunc.o: nasmfunc.asm Makefile
-	# -g ; generate debugging information
-	# -f : select an output format
-	nasm -g -f elf -o nasmfunc.o nasmfunc.asm
+	nasm -f elf -o nasmfunc.o nasmfunc.asm
 
-hankaku.c: $(UTIL)/hankaku.c Makefile
-	cp $(UTIL)/hankaku.c ./
+.asm.bin:
+	nasm $< -o $@ -l $(*F).lst
 
-FILES = bootpack.c hankaku.c graphic.c dsctbl.c int.c \
-				fifo.c keyboard.c mouse.c memory.c sheet.c \
-				timer.c mtask.c window.c console.c file.c \
-				mysprintf.c strncmp.c nasmfunc.o
-bootpack.hrb: $(FILES) har.lds Makefile
-	# http://softwaretechnique.jp/OS_Development/startup_kernel.html
-	#
-	# `-fno-pic` option it set for a workaround because GCC raised error for following reason:
-	# `bootpack.c:(.text+0x9): undefined reference to `_GLOBAL_OFFSET_TABLE_`
-	# PIC: Programmable Interrupt Controller, 割り込みコントローラ．
-	$(GCC) $(CFLAGS) -T har.lds $(FILES) -o bootpack.hrb -fno-pic -Wl,-Map=bootpack.map
+.c.o:
+	gcc $(CFLAGS) $< -o $@
 
-$(OSNAME).sys: asmhead.bin bootpack.hrb Makefile
-	cat asmhead.bin bootpack.hrb > $(OSNAME).sys
+FILES = bootpack.o nasmfunc.o graphic.o dsctbl.o int.o \
+				fifo.o keyboard.o mouse.o memory.o sheet.o \
+				timer.o mtask.o window.o console.o file.o \
+				hankaku.o mysprintf.o strncmp.o
+bootpack.bin: $(FILES) har.lds Makefile
+	ld -m elf_i386 -fno-pie -shared -e HariMain -T har.lds -o $@ $(FILES)
+
+$(OSNAME).sys: asmhead.bin bootpack.bin Makefile
+	cat asmhead.bin bootpack.bin > $(OSNAME).sys
 
 $(OSNAME).img: ipl10.bin $(OSNAME).sys $(APPS) Makefile
 	# 1440 => フロッピーディスクの容量

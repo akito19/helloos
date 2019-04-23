@@ -176,10 +176,10 @@ memcpy:
 	JNZ   memcpy          ; SUB の結果が 0 でなければ memcpy へ
 	RET
 	; memcpy はアドレスサイズプリフィクスを入れ忘れなければ，ストリング命令でも書ける
-	ALIGNB 16
+	ALIGNB 16, DB 0
 
 GDT0:
-	RESB  8     ; null sector
+	TIMES 8 DB 0    ; null sector
 	DW    0xffff,0x0000,0x9200,0x00cf   ; 読み書き可能セグメント 32 bit
 	DW    0xffff,0x0000,0x9a28,0x0046   ; 実行可能セグメント 32bit(for bootpack)
 
@@ -189,7 +189,7 @@ GDTR0:
 	DW    8*3-1
 	DD    GDT0
 
-	ALIGNB  16
+	ALIGNB  16, DB 0
 
 bootpack:
 

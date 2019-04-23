@@ -1,41 +1,25 @@
-
 // https://wisteria0410ss.hatenablog.com/entry/2019/02/21/151455
 #include "bootpack.h"
 
-int strcmp(const char *s1, const char *s2)
+int strcmp(char *str1, char *str2)
 {
     int i;
-    for (i = 0;; i++) {
-        if (s1[i] > s2[i]) return 1;
-        if (s1[i] < s2[i]) return -1;
-        if (s1[i] == 0 && s2[i] == 0) return 0;
+    for (i = 0; i < 20; i++) {
+        if (str1[i] == 0x00 && str2[i] == 0x00) return 0;
+        if (str1[i] == 0x00) return 1;
+        if (str2[i] == 0x00) return 1;
+        if (str1[i] != str2[i]) return 1;
     }
+    return -1;
 }
-
-int starts_with(const char *s, const char *prefix) {
+int strncmp(char *str1, char *str2, int n)
+{
     int i;
-    for(i = 0; prefix[i] != 0; i++) {
-        if(s[i] != prefix[i]) return 0;
+    for (i = 0; i < n; i++) {
+        if (str1[i] == 0x00 && str2[i] == 0x00) return 0;
+        if (str1[i] == 0x00) return 1;
+        if (str2[i] == 0x00) return 1;
+        if (str1[i] != str2[i]) return 1;
     }
-    return 1;
+    return 0;
 }
-
-// int strncmp(const char *s1, const char *s2, unsigned int length)
-// {
-//     int i;
-//     for (i = 0; i <= length; i++) {
-//         if (s1[i] > s2[i]) {
-//             if (i > length) {
-//                 return 0;
-//             }
-//             return 1;
-//         }
-//         if (s1[i] < s2[i]) {
-//             if (i > length) {
-//                 return 0;
-//             }
-//             return -1;
-//         }
-//         if (s1[i] == 0 && s2[i] == 0) return 0;
-//     }
-// }
