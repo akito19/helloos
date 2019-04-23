@@ -18,10 +18,6 @@ nasmfunc.o: nasmfunc.asm Makefile
 	# -f : select an output format
 	nasm -g -f elf -o nasmfunc.o nasmfunc.asm
 
-# まとめる
-hello.hrb: hello.asm Makefile
-	nasm -f elf -o hello.hrb hello.asm
-
 hankaku.c: $(UTIL)/hankaku.c Makefile
 	cp $(UTIL)/hankaku.c ./
 
