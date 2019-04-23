@@ -9,13 +9,15 @@ GLOBAL  io_in8, io_in16, io_in32
 GLOBAL  io_out8, io_out16, io_out32
 GLOBAL  io_load_eflags, io_store_eflags
 GLOBAL  load_gdtr, load_idtr
-GLOBAL  asm_inthandler20, asm_inthandler21, asm_inthandler27, asm_inthandler2c, asm_inthandler0d
+GLOBAL  asm_inthandler20, asm_inthandler21, asm_inthandler27, asm_inthandler2c
+GLOBAL  asm_inthandler0c, asm_inthandler0d
 GLOBAL  asm_hrb_api
 GLOBAL  start_app
 GLOBAL  load_cr0, store_cr0
 GLOBAL  load_tr, farjmp
 GLOBAL  memtest_sub
-EXTERN  inthandler20, inthandler21, inthandler27, inthandler2c, inthandler0d
+EXTERN  inthandler20, inthandler21, inthandler27, inthandler2c
+EXTERN  inthandler0c, inthandler0d
 EXTERN  hrb_api
 
 io_hlt:             ; void io_hlt(void); in C lang.
@@ -92,6 +94,26 @@ load_idtr:          ; void load_idtr(int limit, int addr);
 	MOV   [ESP+6],AX
 	LIDT  [ESP+6]
 	RET
+
+asm_inthandler0c:
+	STI
+	PUSH    ES
+	PUSH    DS
+	PUSHAD
+	MOV     EAX,ESP
+	PUSH    EAX
+	MOV     AX,SS
+	MOV     DS,AX
+	MOV     ES,AX
+	CALL    inthandler0c
+	CMP     EAX,0
+	JNE     end_app
+	POP     EAX
+	POPAD
+	POP     DS
+	POP     ES
+	ADD     ESP,4      ; INT 0x0d ではこれが必要
+	IRETD
 
 asm_inthandler0d:
 	STI

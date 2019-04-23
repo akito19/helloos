@@ -33,6 +33,10 @@ crack5.hrb: crack5.asm
 crack6.hrb: crack6.asm
 	nasm -f elf -o crack6.hrb crack6.asm
 
+BUG1 = bug1.c a.o
+bug1.hrb: bug1.c a.o
+	$(GCC) $(CFLAGS) -T ../har.lds $(BUG1) -o bug1.hrb -fno-pic -Wl,-Map=bug1.map
+
 app.o:
 	nasm -f elf -o $(APP_NAME).o $(APP_NAME).asm
 

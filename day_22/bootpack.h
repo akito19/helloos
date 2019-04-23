@@ -23,6 +23,7 @@ extern void load_gdtr(int limit, int addr);
 extern void load_idtr(int limit, int addr);
 extern int load_cr0(void);
 extern void store_cr0(int cr0);
+extern void asm_inthandler0c(void);
 extern void asm_inthandler0d(void);
 extern void asm_inthandler20(void);
 extern void asm_inthandler21(void);
@@ -244,6 +245,7 @@ struct CONSOLE {
 };
 void console_task(struct SHEET *sheet, unsigned int memtotal);
 int hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
+int inthandler0c(int *esp);
 int inthandler0d(int *esp);
 
 // file.c
