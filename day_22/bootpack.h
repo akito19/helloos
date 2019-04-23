@@ -245,7 +245,7 @@ struct CONSOLE {
     int cur_x, cur_y, cur_c;
 };
 void console_task(struct SHEET *sheet, unsigned int memtotal);
-int hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
+int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
 int inthandler0c(int *esp);
 int inthandler0d(int *esp);
 
