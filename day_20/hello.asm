@@ -6,7 +6,7 @@ putloop:
 	MOV  AL,[CS:ECX]
 	CMP  AL,0
 	JE   fin
-	INT  0x40
+	INT  0x80
 	ADD  ECX,1
 	JMP  putloop
 
