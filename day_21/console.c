@@ -190,7 +190,7 @@ void cmd_mem(struct CONSOLE *cons, unsigned int memtotal)
 {
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
     char s[60];
-    mysprintf(s, "total  %dM\nfree  %dKB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
+    mysprintf(s, "total  %dM\nfree  %dKB\n\n", memtotal / (1024 * 1024), memman_total(memman) / 1024);
     cons_putstr0(cons, s);
     return;
 }
@@ -220,7 +220,7 @@ void cmd_dir(struct CONSOLE *cons)
         }
         if (finfo[i].name[0] != 0xe5) {
             if ((finfo[i].type & 0x18) == 0) {
-                mysprintf(s, "filename.ext  %d\n", finfo[i].size);
+                mysprintf(s, "filename.ext  %d\n\n", finfo[i].size);
                 for (j = 0; j < 8; j++) {
                     s[j] = finfo[i].name[j];
                 }
@@ -260,7 +260,7 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
     struct FILEINFO *finfo;
     struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
-    char name[18], *p;
+    char name[18], *p, *q;
     int i;
 
     // commandline からファイル名を生成
@@ -287,9 +287,11 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
     if (finfo != 0) {
         // File found.
         p = (char *) memman_alloc_4k(memman, finfo->size);
+        q = (char *) memman_alloc_4k(memman, 64 * 1024);
         *((int *) 0xfe8) = (int) p;
         file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
         set_segmdesc(gdt + 1003, finfo->size - 1, (int) p, AR_CODE32_ER);
+        set_segmdesc(gdt + 1004, 64 * 1024 - 1, (int) q, AR_DATA32_RW);
         if (finfo->size >= 8 && starts_with(p + 4, "Hari") == 0) {
             p[0] = 0xe8;
             p[1] = 0x16;
@@ -298,8 +300,9 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
             p[4] = 0x00;
             p[5] = 0xcb;
         }
-        farcall(0, 1003 * 8);
+        start_app(0, 1003 * 8, 64 * 1024, 1004 * 8);
         memman_free_4k(memman, (int) p, finfo->size);
+        memman_free_4k(memman, (int) q, 64 * 1024);
         cons_newline(cons);
         return 1;
     }
