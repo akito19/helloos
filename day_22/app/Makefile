@@ -18,6 +18,9 @@ HELLO4 = a.o hello4.c
 hello4.hrb: hello4.c Makefile
 	$(GCC) $(CFLAGS) -T ../har.lds $(HELLO4) -o hello4.hrb -fno-pic -Wl,-Map=hello4.map
 
+hello5.hrb: hello5.asm Makefile
+	nasm -f elf -o hello5.hrb hello5.asm
+
 BUG1 = bug1.c a.o
 bug1.hrb: bug1.c a.o
 	$(GCC) $(CFLAGS) -T ../har.lds $(BUG1) -o bug1.hrb -fno-pic -Wl,-Map=bug1.map
