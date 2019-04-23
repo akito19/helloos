@@ -127,9 +127,10 @@ void cons_putchar(struct CONSOLE *cons, int chr, char move)
     return;
 }
 
-void hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax)
+int hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax)
 {
     struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
+    struct TASK *task = task_now();
     int cs_base = *((int *) 0xfe8);
 
     if (edx == 1) {
@@ -138,8 +139,10 @@ void hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
         cons_putstr0(cons, (char *) ebx + cs_base);
     } else if (edx == 3) {
         cons_putstr1(cons, (char *) ebx + cs_base, ecx);
+    } else if (edx == 4) {
+        return &(task->tss.esp0);
     }
-    return;
+    return 0;
 }
 
 void cons_newline(struct CONSOLE *cons)
@@ -260,7 +263,8 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
     struct FILEINFO *finfo;
     struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
-    char name[18], *p, *q;
+    struct TASK *task = task_now();
+    char name[13], *p, *q;
     int i;
 
     // commandline からファイル名を生成
@@ -290,8 +294,8 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
         q = (char *) memman_alloc_4k(memman, 64 * 1024);
         *((int *) 0xfe8) = (int) p;
         file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
-        set_segmdesc(gdt + 1003, finfo->size - 1, (int) p, AR_CODE32_ER);
-        set_segmdesc(gdt + 1004, 64 * 1024 - 1, (int) q, AR_DATA32_RW);
+        set_segmdesc(gdt + 1003, finfo->size - 1, (int) p, AR_CODE32_ER + 0x60);
+        set_segmdesc(gdt + 1004, 64 * 1024 - 1, (int) q, AR_DATA32_RW + 0x60);
         if (finfo->size >= 8 && starts_with(p + 4, "Hari") == 0) {
             p[0] = 0xe8;
             p[1] = 0x16;
@@ -300,7 +304,7 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
             p[4] = 0x00;
             p[5] = 0xcb;
         }
-        start_app(0, 1003 * 8, 64 * 1024, 1004 * 8);
+        start_app(0, 1003 * 8, 64 * 1024, 1004 * 8, &task->tss.esp0);
         memman_free_4k(memman, (int) p, finfo->size);
         memman_free_4k(memman, (int) q, 64 * 1024);
         cons_newline(cons);
@@ -330,6 +334,7 @@ void cons_putstr1(struct CONSOLE *cons, char *s, int l)
 int inthandler0d(int *esp)
 {
     struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
+    struct TASK *task = task_now();
     cons_putstr0(cons, "\nINT 0D :\n General Protected Exception.\n");
-    return 1;
+    return &(task->tss.esp0); // 異常終了させる
 }

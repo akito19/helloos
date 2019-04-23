@@ -32,7 +32,7 @@ extern void asm_hrb_api(void);
 extern int memtest_sub(unsigned int start, unsigned int end);
 extern void load_tr(int tr);
 extern void farjmp(int eip, int cs);
-extern void start_app(int eip, int cs, int esp, int ds);
+extern void start_app(int eip, int cs, int esp, int ds, int *tss_esp0);
 
 // original
 int mysprintf(char *str, const char *fmt, ...);
@@ -243,7 +243,7 @@ struct CONSOLE {
     int cur_x, cur_y, cur_c;
 };
 void console_task(struct SHEET *sheet, unsigned int memtotal);
-void hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
+int hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
 int inthandler0d(int *esp);
 
 // file.c

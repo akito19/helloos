@@ -14,8 +14,9 @@ HELLO3 = a.o hello3.c
 hello3.hrb: hello3.c Makefile
 	$(GCC) $(CFLAGS) -T ../har.lds $(HELLO3) -o hello3.hrb -fno-pic -Wl,-Map=hello3.map
 
+CRACK1 = a.o crack1.c
 crack1.hrb: crack1.c
-	$(GCC) $(CFLAGS) -T ../har.lds crack1.c -o crack1.hrb -fno-pic -Wl,-Map=crack1.map
+	$(GCC) $(CFLAGS) -T ../har.lds $(CRACK1) -o crack1.hrb -fno-pic -Wl,-Map=crack1.map
 
 crack2.hrb: crack2.asm
 	nasm -f elf -o crack2.hrb crack2.asm
