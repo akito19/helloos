@@ -199,7 +199,7 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int mem
         cmd_cls(cons);
     } else if (strcmp(cmdline, "dir") == 0) {
         cmd_dir(cons);
-    } else if (starts_with(cmdline, "type ") || strcmp(cmdline, "type") == 0) {
+    } else if (strncmp(cmdline, "type ", 5) == 0) {
         cmd_type(cons, fat, cmdline);
     } else if (cmdline[0] != 0) {
         if (cmd_app(cons, fat, cmdline) == 0) {
@@ -314,7 +314,7 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
         // File found.
         p = (char *) memman_alloc_4k(memman, finfo->size);
         file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
-        if (finfo->size >= 36 && starts_with(p + 4, "Hari") == 0 && *p ==0x00) {
+        if (finfo->size >= 36 && strncmp(p + 4, "Hari", 4) == 0 && *p == 0x00) {
             segsiz = *((int *) (p + 0x0000));
             esp    = *((int *) (p + 0x000c));
             datsiz = *((int *) (p + 0x0010));

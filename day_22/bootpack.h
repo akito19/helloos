@@ -38,9 +38,8 @@ extern void asm_end_app(void);
 
 // original
 int mysprintf(char *str, const char *fmt, ...);
-int strcmp(const char *s1, const char *s2);
-// int strncmp(const char *s1, const char *s2, unsigned int length);
-int starts_with(const char *s, const char *prefix);
+int strcmp(char *str1, char *str2);
+int strncmp(char *str1, char *str2, int n);
 
 // fifo.c
 struct FIFO32 {
