@@ -1,7 +1,7 @@
 bits 32
 
 GLOBAL api_putchar, api_putstr0
-GLOBAL api_end, api_point
+GLOBAL api_end, api_point, api_getkey
 GLOBAL api_openwin, api_closewin
 GLOBAL api_putstrwin, api_boxfilwin
 GLOBAL api_refreshwin, api_linewin
@@ -18,6 +18,12 @@ api_putchar:
 api_end:
 	mov  edx,4
 	int  0x40
+
+api_getkey:
+	mov   edx,15
+	mov   eax,[esp+4]
+	int   0x40
+	ret
 
 api_putstr0:
 	push  ebx
