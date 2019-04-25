@@ -1,11 +1,9 @@
 bits 32
 
-GLOBAL api_putchar
+GLOBAL api_putchar, api_putstr0
 GLOBAL api_end
-GLOBAL api_putstr0
-GLOBAL api_openwin
-GLOBAL api_putstrwin
-GLOBAL api_boxfilwin
+GLOBAL api_openwin, api_putstrwin, api_boxfilwin
+GLOBAL api_initmalloc, api_malloc
 
 section .text
 
@@ -79,4 +77,35 @@ api_boxfilwin:
 	pop   ebp
 	pop   esi
 	pop   edi
+	ret
+
+api_initmalloc:
+	push  ebx
+	mov   edx,8
+	mov   ebx,[cs:0x0020] ; malloc 領域の番地
+	mov   eax,ebx
+	add   eax,32*1024
+	mov   ecx,[cs:0x0000] ; data segment の大きさ
+	sub   ecx,eax
+	int   0x40
+	pop   ebx
+	ret
+
+api_malloc:
+	push  ebx
+	mov   edx,9
+	mov   ebx,[cs:0x0020]
+	mov   ecx,[esp+8]     ; size
+	int   0x40
+	pop   ebx
+	ret
+
+api_free:
+	push  ebx
+	mov   edx,10
+	mov   ebx,[cs:0x0020]
+	mov   eax,[esp+8]
+	mov   ecx,[esp+12]
+	int   0x40
+	pop   ebx
 	ret

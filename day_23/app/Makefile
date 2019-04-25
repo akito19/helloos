@@ -11,3 +11,6 @@ api.o: api.asm
 
 %.hrb: %.o api.o
 	ld -fno-pie -shared -e HariMain -T app.lds -m elf_i386 -o $@ $< api.o
+
+src_only:
+	rm -f *.o *.hrb
