@@ -1,7 +1,7 @@
 bits 32
 
 GLOBAL api_putchar, api_putstr0
-GLOBAL api_end
+GLOBAL api_end, api_point
 GLOBAL api_openwin, api_putstrwin, api_boxfilwin
 GLOBAL api_initmalloc, api_malloc
 
@@ -108,4 +108,19 @@ api_free:
 	mov   ecx,[esp+12]
 	int   0x40
 	pop   ebx
+	ret
+
+api_point:
+	push  edi
+	push  esi
+	push  ebx
+	mov   edx,11
+	mov   ebx,[esp+16]  ; win
+	mov   esi,[esp+20]  ; x
+	mov   edi,[esp+24]  ; y
+	mov   eax,[esp+28]  ; col
+	int   0x40
+	pop   ebx
+	pop   esi
+	pop   edi
 	ret
