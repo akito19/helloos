@@ -9,7 +9,7 @@ void HariMain(void)
     struct MOUSE_DEC mdec;
     struct MEMMAN *memman = (struct MEMMAM *) MEMMAN_ADDR;
     struct SHTCTL *shtctl;
-    struct SHEET *sht_back, *sht_cons, *sht_mouse, *sht_win;
+    struct SHEET *sht, *sht_back, *sht_cons, *sht_mouse, *sht_win;
     struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
     struct TASK *task_a, *task_cons;
     struct TIMER *timer;
@@ -18,6 +18,7 @@ void HariMain(void)
     char s[40];
     int fifobuf[128], keycmd_buf[32];
     int mx, my, i, cursor_x, cursor_c;
+    int j, x, y;
     int key_to = 0, key_shift = 0, key_leds = (binfo->leds >> 4) & 7, keycmd_wait = -1;
     unsigned int memtotal;
     static char keytable0[0x80] = {
@@ -263,7 +264,19 @@ void HariMain(void)
                     }
                     sheet_slide(sht_mouse, mx, my);
                     if ((mdec.btn & 0x01) != 0) {
-                        sheet_slide(sht_win, mx - 80, my - 8);
+                        // 左クリック
+                        // クリック位置をみて，上のシートから順に探す
+                        for (j = shtctl->top - 1; j > 0; j--) {
+                            sht = shtctl->sheets[j];
+                            x = mx - sht->vx0;
+                            y = my - sht->vy0;
+                            if (0 <= x && x < sht->bxsize && 0 <= y && y < sht->bysize) {
+                                if (sht->buf[y * sht->bxsize + x] != sht->col_inv) {
+                                    sheet_updown(sht, shtctl->top - 1);
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             } else if (i <= 1) { // カーソル用タイマ
