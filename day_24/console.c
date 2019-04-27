@@ -9,7 +9,6 @@ void cmd_cls(struct CONSOLE *cons);
 void cmd_dir(struct CONSOLE *cons);
 void cmd_type(struct CONSOLE *cons, int *fat, char *cmdline);
 int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline);
-void cons_putstr0(struct CONSOLE *cons, char *s);
 void cons_putstr1(struct CONSOLE *cons, char *s, int l);
 
 void console_task(struct SHEET *sheet, unsigned int memtotal)
@@ -151,6 +150,7 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
     } else if (edx == 5) {
         sht = sheet_alloc(shtctl);
         sht->task = task;
+        sht->flags |= 0x10;
         sheet_setbuf(sht, (char *) ebx + ds_base, esi, edi, eax);
         make_window8((char *) ebx + ds_base, esi, edi, (char *) ecx + ds_base, 0);
         sheet_slide(sht, 100, 50);
@@ -443,7 +443,7 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
             shtctl = (struct SHTCTL *) *((int *) 0x0fe4);
             for (i = 0; i < MAX_SHEETS; i++) {
                 sht = &(shtctl->sheets0[i]);
-                if (sht->flags != 0 && sht->task == task) {
+                if ((sht->flags & 0x11) == 0x11 && sht->task == task) {
                     // アプリが開きっぱなしにしたシートを発見
                     sheet_free(sht); // 閉じる
                 }
