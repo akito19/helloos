@@ -6,6 +6,7 @@ GLOBAL api_openwin, api_closewin
 GLOBAL api_putstrwin, api_boxfilwin
 GLOBAL api_refreshwin, api_linewin
 GLOBAL api_initmalloc, api_malloc
+GLOBAL api_alloctimer, api_inittimer, api_settimer, api_freetimer
 
 section .text
 
@@ -174,4 +175,35 @@ api_point:
 	pop   ebx
 	pop   esi
 	pop   edi
+	ret
+
+api_alloctimer:
+	mov   edx,16
+	int   0x40
+	ret
+
+api_inittimer:
+	push  ebx
+	mov   edx,17
+	mov   ebx,[esp+8]  ; timer
+	mov   eax,[esp+12] ; data
+	int   0x40
+	pop   ebx
+	ret
+
+api_settimer:
+	push  ebx
+	mov   edx,18
+	mov   ebx,[esp+8]  ; timer
+	mov   eax,[esp+12] ; time
+	int   0x40
+	pop   ebx
+	ret
+
+api_freetimer:
+	push  ebx
+	mov   edx,19
+	mov   ebx,[esp+8]  ; timer
+	int   0x40
+	pop   ebx
 	ret

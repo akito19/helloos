@@ -1,6 +1,3 @@
-// https://wisteria0410ss.hatenablog.com/entry/2019/02/21/151455
-#include "bootpack.h"
-
 int strcmp(char *str1, char *str2)
 {
     int i;
