@@ -278,6 +278,17 @@ void HariMain(void)
                                             mmx = mx;
                                             mmy = my;
                                         }
+                                        if (sht->bxsize - 21 <= x && x < sht->bxsize - 5 && 5 <= y && y < 19) {
+                                            // [x] ボタンをクリック
+                                            if (sht->task != 0) {
+                                                cons = (struct CONSOLE *) *((int *) 0x0fec);
+                                                cons_putstr0(cons, "\nBreak(mouse) :\n");
+                                                io_cli(); // shutdown中にタスクが切り替わってほしくない
+                                                task_cons->tss.eax = (int) &(task_cons->tss.esp0);
+                                                task_cons->tss.eip = (int) asm_end_app;
+                                                io_sti();
+                                            }
+                                        }
                                         break;
                                     }
                                 }
