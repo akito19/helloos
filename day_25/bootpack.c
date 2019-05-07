@@ -19,7 +19,7 @@ void HariMain(void)
     struct CONSOLE *cons;
     unsigned char *buf_back, buf_mouse[256], *buf_cons[2];
     char s[40];
-    int fifobuf[128], keycmd_buf[32];
+    int fifobuf[128], keycmd_buf[32], *cons_fifo[2];
     int mx, my, i;
     int j, x, y, mmx = -1, mmy = -1;
     int key_shift = 0, key_leds = (binfo->leds >> 4) & 7, keycmd_wait = -1;
@@ -94,6 +94,8 @@ void HariMain(void)
         task_run(task_cons[i], 2, 2);  // level=2, priority=2
         sht_cons[i]->task = task_cons[i];
         sht_cons[i]->flags |= 0x20;
+        cons_fifo[i] = (int *) memman_alloc_4k(memman, 128 * 4);
+        fifo32_init(&task_cons[i]->fifo, 128, cons_fifo[i], task_cons[i]);
     }
 
     // sht_mouse
