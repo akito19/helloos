@@ -12,12 +12,12 @@ void HariMain(void)
     struct MOUSE_DEC mdec;
     struct MEMMAN *memman = (struct MEMMAM *) MEMMAN_ADDR;
     struct SHTCTL *shtctl;
-    struct SHEET *sht = 0, *sht_back, *sht_cons, *sht_mouse, *sht_win, *key_win;
+    struct SHEET *sht = 0, *sht_back, *sht_mouse, *sht_win, *key_win, *sht_cons[2];
     struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
-    struct TASK *task_a, *task_cons;
+    struct TASK *task_a, *task_cons[2];
     struct TIMER *timer;
     struct CONSOLE *cons;
-    unsigned char *buf_back, *buf_cons, buf_mouse[256], *buf_win;
+    unsigned char *buf_back, buf_mouse[256], *buf_win, *buf_cons[2];
     char s[40];
     int fifobuf[128], keycmd_buf[32];
     int mx, my, i, cursor_x, cursor_c;
@@ -74,23 +74,27 @@ void HariMain(void)
     init_screen8(buf_back, binfo->scrnx, binfo->scrny);
 
     // sht_cons
-    sht_cons = sheet_alloc(shtctl);
-    buf_cons = (unsigned char *) memman_alloc_4k(memman, 256 * 165);
-    sheet_setbuf(sht_cons, buf_cons, 256, 165, -1);
-    make_window8(buf_cons, 256, 165, "console", 0);
-    make_textbox8(sht_cons, 8, 28, 240, 128, COL8_000000);
-    task_cons = task_alloc();
-    task_cons->tss.esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024 - 12;
-    task_cons->tss.eip = (int) &console_task;
-    task_cons->tss.es = 1 * 8;
-    task_cons->tss.cs = 2 * 8;
-    task_cons->tss.ss = 1 * 8;
-    task_cons->tss.ds = 1 * 8;
-    task_cons->tss.fs = 1 * 8;
-    task_cons->tss.gs = 1 * 8;
-    *((int *) (task_cons->tss.esp + 4)) = (int) sht_cons;
-    *((int *) (task_cons->tss.esp + 8)) = memtotal;
-    task_run(task_cons, 2, 2);  // level=2, priority=2
+    for (i = 0; i < 2; i++) {
+        sht_cons[i] = sheet_alloc(shtctl);
+        buf_cons[i] = (unsigned char *) memman_alloc_4k(memman, 256 * 165);
+        sheet_setbuf(sht_cons[i], buf_cons[i], 256, 165, -1);
+        make_window8(buf_cons[i], 256, 165, "console", 0);
+        make_textbox8(sht_cons[i], 8, 28, 240, 128, COL8_000000);
+        task_cons[i] = task_alloc();
+        task_cons[i]->tss.esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024 - 12;
+        task_cons[i]->tss.eip = (int) &console_task;
+        task_cons[i]->tss.es = 1 * 8;
+        task_cons[i]->tss.cs = 2 * 8;
+        task_cons[i]->tss.ss = 1 * 8;
+        task_cons[i]->tss.ds = 1 * 8;
+        task_cons[i]->tss.fs = 1 * 8;
+        task_cons[i]->tss.gs = 1 * 8;
+        *((int *) (task_cons[i]->tss.esp + 4)) = (int) sht_cons[i];
+        *((int *) (task_cons[i]->tss.esp + 8)) = memtotal;
+        task_run(task_cons[i], 2, 2);  // level=2, priority=2
+        sht_cons[i]->task = task_cons[i];
+        sht_cons[i]->flags |= 0x20;
+    }
 
     // sht_win
     sht_win = sheet_alloc(shtctl);
@@ -106,8 +110,6 @@ void HariMain(void)
 
     // key_win
     key_win = sht_win;
-    sht_cons->task = task_cons;
-    sht_cons->flags |= 0x20;
 
     // sht_mouse
     sht_mouse = sheet_alloc(shtctl);
@@ -118,13 +120,15 @@ void HariMain(void)
     my = (binfo->scrny - 28 - 16) / 2;
 
     sheet_slide(sht_back,  0,  0);
-    sheet_slide(sht_cons, 32,  4);
+    sheet_slide(sht_cons[1], 56, 6);
+    sheet_slide(sht_cons[0],  8, 2);
     sheet_slide(sht_win,  64, 56);
     sheet_slide(sht_mouse, mx, my);
-    sheet_updown(sht_back,  0);
-    sheet_updown(sht_cons,  1);
-    sheet_updown(sht_win,   2);
-    sheet_updown(sht_mouse, 3);
+    sheet_updown(sht_back,    0);
+    sheet_updown(sht_cons[1], 1);
+    sheet_updown(sht_cons[0], 2);
+    sheet_updown(sht_win,     3);
+    sheet_updown(sht_mouse,   4);
 
     // 最初にキーボード状態との食い違いがないように，設定しておく
     fifo32_put(&keycmd, KEYCMD_LED);
@@ -232,12 +236,12 @@ void HariMain(void)
                     wait_KBC_sendready();
                     io_out8(PORT_KEYDAT, keycmd_wait);
                 }
-                if (i == 256 + 0x3b && key_shift != 0 && task_cons->tss.ss0 != 0) { // shift + F1
+                if (i == 256 + 0x3b && key_shift != 0 && task_cons[0]->tss.ss0 != 0) { // shift + F1
                     cons = (struct CONSOLE *) *((int *) 0x0fec);
                     cons_putstr0(cons, "\nBreak(key) :\n");
                     io_cli();
-                    task_cons->tss.eax = (int) &(task_cons->tss.esp0);
-                    task_cons->tss.eip = (int) asm_end_app;
+                    task_cons[0]->tss.eax = (int) &(task_cons[0]->tss.esp0);
+                    task_cons[0]->tss.eip = (int) asm_end_app;
                     io_sti();
                 }
                 if (i == 256 + 0x57 && shtctl->top > 2) {
@@ -292,8 +296,8 @@ void HariMain(void)
                                                 cons = (struct CONSOLE *) *((int *) 0x0fec);
                                                 cons_putstr0(cons, "\nBreak(mouse) :\n");
                                                 io_cli(); // shutdown中にタスクが切り替わってほしくない
-                                                task_cons->tss.eax = (int) &(task_cons->tss.esp0);
-                                                task_cons->tss.eip = (int) asm_end_app;
+                                                task_cons[0]->tss.eax = (int) &(task_cons[0]->tss.esp0);
+                                                task_cons[0]->tss.eip = (int) asm_end_app;
                                                 io_sti();
                                             }
                                         }
