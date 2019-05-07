@@ -7,6 +7,7 @@ GLOBAL api_putstrwin, api_boxfilwin
 GLOBAL api_refreshwin, api_linewin
 GLOBAL api_initmalloc, api_malloc
 GLOBAL api_alloctimer, api_inittimer, api_settimer, api_freetimer
+GLOBAL api_beep
 
 section .text
 
@@ -206,4 +207,10 @@ api_freetimer:
 	mov   ebx,[esp+8]  ; timer
 	int   0x40
 	pop   ebx
+	ret
+
+api_beep:
+	mov   edx,20
+	mov   eax,[esp+4]
+	int   0x40
 	ret
