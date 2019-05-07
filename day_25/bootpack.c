@@ -14,7 +14,7 @@ void HariMain(void)
     struct SHTCTL *shtctl;
     struct SHEET *sht = 0, *sht_back, *sht_mouse, *sht_win, *key_win, *sht_cons[2];
     struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
-    struct TASK *task_a, *task_cons[2];
+    struct TASK *task_a, *task_cons[2], *task;
     struct TIMER *timer;
     struct CONSOLE *cons;
     unsigned char *buf_back, buf_mouse[256], *buf_win, *buf_cons[2];
@@ -236,13 +236,15 @@ void HariMain(void)
                     wait_KBC_sendready();
                     io_out8(PORT_KEYDAT, keycmd_wait);
                 }
-                if (i == 256 + 0x3b && key_shift != 0 && task_cons[0]->tss.ss0 != 0) { // shift + F1
-                    cons = (struct CONSOLE *) *((int *) 0x0fec);
-                    cons_putstr0(cons, "\nBreak(key) :\n");
-                    io_cli();
-                    task_cons[0]->tss.eax = (int) &(task_cons[0]->tss.esp0);
-                    task_cons[0]->tss.eip = (int) asm_end_app;
-                    io_sti();
+                if (i == 256 + 0x3b && key_shift != 0) { // shift + F1
+                    task = key_win->task;
+                    if (task != 0 && task->tss.ss0 != 0) {
+                        cons_putstr0(task->cons, "\nBreak(key) :\n");
+                        io_cli();
+                        task->tss.eax = (int) &(task->tss.esp0);
+                        task->tss.eip = (int) asm_end_app;
+                        io_sti();
+                    }
                 }
                 if (i == 256 + 0x57 && shtctl->top > 2) {
                     sheet_updown(shtctl->sheets[1], shtctl->top - 1);
@@ -293,11 +295,11 @@ void HariMain(void)
                                         if (sht->bxsize - 21 <= x && x < sht->bxsize - 5 && 5 <= y && y < 19) {
                                             // [x] ボタンをクリック
                                             if ((sht->flags & 0x10) != 0) {
-                                                cons = (struct CONSOLE *) *((int *) 0x0fec);
-                                                cons_putstr0(cons, "\nBreak(mouse) :\n");
+                                                task = sht->task;
+                                                cons_putstr0(task->cons, "\nBreak(mouse) :\n");
                                                 io_cli(); // shutdown中にタスクが切り替わってほしくない
-                                                task_cons[0]->tss.eax = (int) &(task_cons[0]->tss.esp0);
-                                                task_cons[0]->tss.eip = (int) asm_end_app;
+                                                task->tss.eax = (int) &(task->tss.esp0);
+                                                task->tss.eip = (int) asm_end_app;
                                                 io_sti();
                                             }
                                         }
